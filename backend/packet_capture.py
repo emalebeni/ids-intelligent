@@ -1,194 +1,294 @@
 """
-Capture de paquets réseau et simulation d'attaques
-Version améliorée avec plus de types d'attaques
+Module de capture de paquets et simulation d'attaques
+Version améliorée avec classification correcte
 """
 
+from typing import Dict, List, Callable, Optional
 import random
 import time
+import threading
 from datetime import datetime
-from typing import Callable, List, Dict
-from models import NetworkPacket
+
+
+class NetworkPacket:
+    """Représente un paquet réseau"""
+    
+    def __init__(self, source_ip: str, destination_ip: str, 
+                 source_port: int, destination_port: int,
+                 protocol: str = "TCP", payload_size: int = 0,
+                 flags: str = "", raw_data: bytes = b""):
+        self.packet_id = self._generate_packet_id()
+        self.timestamp = datetime.now()
+        self.source_ip = source_ip
+        self.destination_ip = destination_ip
+        self.source_port = source_port
+        self.destination_port = destination_port
+        self.protocol = protocol
+        self.payload_size = payload_size
+        self.flags = flags
+        self.raw_data = raw_data
+    
+    def _generate_packet_id(self) -> str:
+        """Génère un ID unique pour le paquet"""
+        return f"pkt_{int(time.time() * 1000000)}_{random.randint(1000, 9999)}"
+    
+    def to_dict(self) -> Dict:
+        """Convertit en dictionnaire"""
+        return {
+            'packet_id': self.packet_id,
+            'timestamp': self.timestamp.isoformat(),
+            'source_ip': self.source_ip,
+            'destination_ip': self.destination_ip,
+            'source_port': self.source_port,
+            'destination_port': self.destination_port,
+            'protocol': self.protocol,
+            'payload_size': self.payload_size,
+            'flags': self.flags,
+            'raw_data': self.raw_data.decode('utf-8', errors='ignore') if self.raw_data else ""
+        }
+    
+    def is_encrypted(self) -> bool:
+        """Vérifie si le paquet est chiffré"""
+        return self.destination_port in [443, 8443, 22, 990, 992, 993, 995]
+    
+    def extract_headers(self) -> Dict:
+        """Extrait les headers du paquet"""
+        return {
+            'ip_version': 4,
+            'ttl': 64,
+            'protocol': self.protocol,
+            'source': self.source_ip,
+            'destination': self.destination_ip
+        }
+    
+    def get_protocol_info(self) -> Dict:
+        """Retourne des infos sur le protocole"""
+        protocol_info = {
+            'TCP': {'reliable': True, 'connection_oriented': True},
+            'UDP': {'reliable': False, 'connection_oriented': False},
+            'ICMP': {'reliable': False, 'connection_oriented': False}
+        }
+        return protocol_info.get(self.protocol, {})
 
 
 class PacketCapture:
-    """Capture les paquets réseau (mode simulation pour démo)"""
+    """Système de capture de paquets réseau"""
     
-    def __init__(self, interface="lo", callback=None):
+    def __init__(self, interface: str = "lo"):
         self.interface = interface
-        self.callback = callback
         self.is_capturing = False
+        self.callback: Optional[Callable] = None
         self.packets_captured = 0
-        self.simulation_mode = True  # Mode simulation par défaut
         
-        # Configurations pour simulation
+        # IPs normales et malveillantes
         self.normal_ips = [
-            f"192.168.1.{i}" for i in range(2, 50)
-        ] + [
-            f"10.0.0.{i}" for i in range(10, 100)
+            '192.168.1.10', '192.168.1.11', '192.168.1.12',
+            '10.0.0.5', '10.0.0.6', '10.0.0.7'
         ]
         
         self.malicious_ips = [
-            '203.0.113.1',
-            '198.51.100.42', 
-            '192.0.2.123',
-            '10.0.0.666'
+            '203.0.113.1',    # IP test malveillante
+            '198.51.100.42',  # IP test malveillante
+            '192.0.2.123',    # IP test malveillante
+            '10.0.0.666'      # IP suspecte
         ]
         
         self.common_destinations = [
             '192.168.1.1',      # Gateway
             '8.8.8.8',          # Google DNS
             '1.1.1.1',          # Cloudflare DNS
-            '93.184.216.34',    # example.com
-            '172.217.14.206'    # Google
+            '93.184.216.34'     # example.com
         ]
         
+        # Ports normaux et suspects
         self.normal_ports = [80, 443, 53, 22, 25, 110, 143, 3306, 5432, 27017]
         self.suspicious_ports = [23, 135, 139, 445, 1433, 3389, 4444, 5900, 6667, 31337]
-        self.protocols = ['TCP', 'UDP', 'ICMP', 'HTTP', 'HTTPS']
     
     def start_capture(self):
         """Démarre la capture"""
         self.is_capturing = True
         print(f"[PacketCapture] Capture démarrée sur {self.interface}")
-        
-        if self.simulation_mode:
-            print("[PacketCapture] Mode simulation activé")
     
     def stop_capture(self):
         """Arrête la capture"""
         self.is_capturing = False
-        print(f"[PacketCapture] Capture arrêtée - {self.packets_captured} paquets capturés")
+        print(f"[PacketCapture] Capture arrêtée")
     
-    def generate_traffic(self, duration_seconds=60, packets_per_second=10):
-        """Génère du trafic simulé"""
-        print(f"[PacketCapture] Génération de trafic: {packets_per_second} paquets/sec pendant {duration_seconds}s")
+    def generate_traffic(self, duration_seconds: int = 3600, packets_per_second: int = 10):
+        """Génère du trafic réseau simulé"""
+        print(f"[PacketCapture] Génération de trafic: {packets_per_second} pkt/s pendant {duration_seconds}s")
         
         start_time = time.time()
         
         while self.is_capturing and (time.time() - start_time) < duration_seconds:
             packet = self._generate_random_packet()
             
-            if self.callback:
-                self.callback(packet)
+            if self.callback and packet:
+                try:
+                    self.callback(packet)
+                    self.packets_captured += 1
+                except Exception as e:
+                    print(f"[PacketCapture] Erreur callback: {e}")
             
-            self.packets_captured += 1
-            time.sleep(1.0 / packets_per_second)
+            time.sleep(1 / packets_per_second)
     
-    def _generate_random_packet(self) -> NetworkPacket:
-        """Génère un paquet aléatoire réaliste"""
-        # 90% de trafic normal, 10% suspect
-        is_suspicious = random.random() < 0.1
+    def _generate_random_packet(self) -> Optional[NetworkPacket]:
+        """Génère un paquet aléatoire (normal ou suspect)"""
         
-        if is_suspicious:
-            source_ip = random.choice(self.malicious_ips + self.normal_ips)
-            dest_port = random.choice(self.suspicious_ports)
-            payload_size = random.choice([0, random.randint(100, 10000)])
+        # 90% trafic normal, 10% suspect, 5% attaque claire
+        rand = random.random()
+        
+        if rand < 0.90:
+            # Trafic normal
+            return self._generate_normal_packet()
+        elif rand < 0.95:
+            # Trafic suspect
+            return self._generate_suspicious_packet()
         else:
-            source_ip = random.choice(self.normal_ips)
-            dest_port = random.choice(self.normal_ports)
-            payload_size = random.randint(64, 1500)
-        
+            # Attaque claire
+            return self._generate_attack_packet()
+    
+    def _generate_normal_packet(self) -> NetworkPacket:
+        """Génère un paquet normal"""
+        source_ip = random.choice(self.normal_ips)
         dest_ip = random.choice(self.common_destinations)
         source_port = random.randint(49152, 65535)
-        protocol = random.choice(self.protocols)
+        dest_port = random.choice(self.normal_ports)
         
-        # 5% de chance d'attaque réelle
-        if random.random() < 0.05:
-            return self._generate_attack_packet()
+        payload_size = random.randint(64, 1500)
+        flags = "PSH,ACK" if random.random() > 0.5 else "ACK"
         
-        packet = NetworkPacket(
+        return NetworkPacket(
             source_ip=source_ip,
             destination_ip=dest_ip,
             source_port=source_port,
             destination_port=dest_port,
-            protocol=protocol,
-            payload_size=payload_size
+            protocol="TCP",
+            payload_size=payload_size,
+            flags=flags,
+            raw_data=b"Normal HTTP request data"
         )
+    
+    def _generate_suspicious_packet(self) -> NetworkPacket:
+        """Génère un paquet suspect"""
+        source_ip = random.choice(self.normal_ips + self.malicious_ips[:1])
+        dest_ip = random.choice(self.common_destinations)
+        source_port = random.randint(1024, 65535)
+        dest_port = random.choice(self.suspicious_ports)
         
-        return packet
+        payload_size = random.randint(100, 5000)
+        flags = "SYN"
+        
+        return NetworkPacket(
+            source_ip=source_ip,
+            destination_ip=dest_ip,
+            source_port=source_port,
+            destination_port=dest_port,
+            protocol="TCP",
+            payload_size=payload_size,
+            flags=flags,
+            raw_data=b"Suspicious port scan attempt"
+        )
     
     def _generate_attack_packet(self) -> NetworkPacket:
         """Génère un paquet d'attaque"""
-        attack_types = ['ddos', 'port_scan', 'malware', 'sql_injection', 'brute_force']
+        attack_types = ['ddos', 'port_scan', 'malware', 'sql_injection', 'xss']
         attack_type = random.choice(attack_types)
         
+        source_ip = random.choice(self.malicious_ips)
+        dest_ip = random.choice(self.common_destinations)
+        
         if attack_type == 'ddos':
-            source_ip = random.choice(self.malicious_ips)
-            dest_ip = self.common_destinations[0]  # Gateway
-            source_port = random.randint(1024, 65535)
-            dest_port = 80
-            payload_size = random.randint(1, 100)
+            return NetworkPacket(
+                source_ip=source_ip,
+                destination_ip=dest_ip,
+                source_port=random.randint(1024, 65535),
+                destination_port=80,
+                protocol="TCP",
+                payload_size=random.randint(10, 100),
+                flags="SYN",
+                raw_data=b"DDoS flood attack"
+            )
         
         elif attack_type == 'port_scan':
-            source_ip = random.choice(self.malicious_ips)
-            dest_ip = self.common_destinations[0]
-            source_port = random.randint(49152, 65535)
-            dest_port = random.randint(1, 1024)
-            payload_size = 0
+            return NetworkPacket(
+                source_ip=source_ip,
+                destination_ip=dest_ip,
+                source_port=random.randint(49152, 65535),
+                destination_port=random.randint(1, 1024),
+                protocol="TCP",
+                payload_size=0,
+                flags="SYN",
+                raw_data=b"Port scanning"
+            )
         
         elif attack_type == 'malware':
-            source_ip = random.choice(self.normal_ips)
-            dest_ip = random.choice(self.malicious_ips)
-            source_port = random.randint(49152, 65535)
-            dest_port = random.choice([4444, 6667, 31337])
-            payload_size = random.randint(100, 5000)
+            return NetworkPacket(
+                source_ip=source_ip,
+                destination_ip=dest_ip,
+                source_port=random.randint(49152, 65535),
+                destination_port=random.choice([4444, 6667, 31337]),
+                protocol="TCP",
+                payload_size=random.randint(500, 2000),
+                flags="PSH,ACK",
+                raw_data=b"C&C communication attempt"
+            )
         
         elif attack_type == 'sql_injection':
-            source_ip = random.choice(self.malicious_ips)
-            dest_ip = self.common_destinations[0]
-            source_port = random.randint(49152, 65535)
-            dest_port = 80
-            payload_size = random.randint(200, 1000)
+            payload = b"GET /login.php?user=admin' OR '1'='1"
+            return NetworkPacket(
+                source_ip=source_ip,
+                destination_ip=dest_ip,
+                source_port=random.randint(49152, 65535),
+                destination_port=80,
+                protocol="TCP",
+                payload_size=len(payload),
+                flags="PSH,ACK",
+                raw_data=payload
+            )
         
-        else:  # brute_force
-            source_ip = random.choice(self.malicious_ips)
-            dest_ip = self.common_destinations[0]
-            source_port = random.randint(49152, 65535)
-            dest_port = random.choice([22, 3389, 5900])
-            payload_size = random.randint(50, 200)
-        
-        packet = NetworkPacket(
-            source_ip=source_ip,
-            destination_ip=dest_ip,
-            source_port=source_port,
-            destination_port=dest_port,
-            protocol='TCP',
-            payload_size=payload_size
-        )
-        
-        return packet
+        else:  # xss
+            payload = b"<script>alert('XSS')</script>"
+            return NetworkPacket(
+                source_ip=source_ip,
+                destination_ip=dest_ip,
+                source_port=random.randint(49152, 65535),
+                destination_port=80,
+                protocol="TCP",
+                payload_size=len(payload),
+                flags="PSH,ACK",
+                raw_data=payload
+            )
+    
+    def get_statistics(self) -> Dict:
+        """Retourne les statistiques de capture"""
+        return {
+            'interface': self.interface,
+            'is_capturing': self.is_capturing,
+            'packets_captured': self.packets_captured
+        }
 
 
 class AttackSimulator:
-    """Simule différents types d'attaques pour la démo"""
+    """Simulateur d'attaques"""
     
-    def __init__(self, callback: Callable = None):
-        self.callback = callback
-        self.attacks_simulated = 0
+    def __init__(self):
+        self.callback: Optional[Callable] = None
+        self.is_simulating = False
     
-    def simulate_ddos(self, target_ip: str = "192.168.1.1", 
-                     source_ips: List[str] = None, 
+    def simulate_ddos(self, target_ip: str = "192.168.1.1",
+                     source_ips: List[str] = None,
                      duration: int = 10,
                      intensity: int = 100) -> Dict:
-        """
-        Simule une attaque DDoS
+        """Simule une attaque DDoS"""
         
-        Args:
-            target_ip: IP cible
-            source_ips: Liste d'IPs sources (botnet)
-            duration: Durée en secondes
-            intensity: Paquets par seconde
-        """
-        print(f"[AttackSimulator] Simulation DDoS vers {target_ip} - {intensity} pkt/s pendant {duration}s")
-        
-        if not source_ips:
+        if source_ips is None:
             source_ips = [
-                '203.0.113.1',
-                '198.51.100.42',
-                '192.0.2.123',
-                f'10.0.0.{random.randint(100, 250)}',
-                f'172.16.0.{random.randint(100, 250)}'
+                '203.0.113.1', '198.51.100.42', '192.0.2.123',
+                '10.0.0.66', '172.16.0.99'
             ]
+        
+        print(f"[AttackSimulator] Simulation DDoS vers {target_ip} - {intensity} pkt/s pendant {duration}s")
         
         packets_sent = 0
         start_time = time.time()
@@ -201,50 +301,38 @@ class AttackSimulator:
                 destination_ip=target_ip,
                 source_port=random.randint(1024, 65535),
                 destination_port=80,
-                protocol='TCP',
-                payload_size=random.randint(1, 100),
-                flags='SYN'
+                protocol="TCP",
+                payload_size=random.randint(10, 100),
+                flags="SYN",
+                raw_data=b"DDoS SYN flood"
             )
             
             if self.callback:
                 self.callback(packet)
             
             packets_sent += 1
-            time.sleep(1.0 / intensity)
+            time.sleep(1 / intensity)
         
-        self.attacks_simulated += 1
+        print(f"[AttackSimulator] Attaque DDoS terminée: {packets_sent} paquets envoyés")
         
-        result = {
+        return {
             'type': 'DDoS',
             'target': target_ip,
             'packets_sent': packets_sent,
             'duration': duration,
-            'intensity': intensity,
-            'source_ips': len(source_ips)
+            'status': 'completed'
         }
-        
-        print(f"[AttackSimulator] Attaque DDoS terminée: {packets_sent} paquets envoyés")
-        return result
     
     def simulate_port_scan(self, target_ip: str = "192.168.1.1",
                           source_ip: str = "203.0.113.1",
                           start_port: int = 1,
                           end_port: int = 1024,
                           scan_speed: float = 0.01) -> Dict:
-        """
-        Simule un scan de ports
+        """Simule un scan de ports"""
         
-        Args:
-            target_ip: IP cible
-            source_ip: IP source
-            start_port: Port de début
-            end_port: Port de fin
-            scan_speed: Délai entre chaque paquet (secondes)
-        """
         print(f"[AttackSimulator] Simulation Port Scan: {source_ip} -> {target_ip} (ports {start_port}-{end_port})")
         
         packets_sent = 0
-        open_ports = []
         
         for port in range(start_port, end_port + 1):
             packet = NetworkPacket(
@@ -252,73 +340,54 @@ class AttackSimulator:
                 destination_ip=target_ip,
                 source_port=random.randint(49152, 65535),
                 destination_port=port,
-                protocol='TCP',
+                protocol="TCP",
                 payload_size=0,
-                flags='SYN'
+                flags="SYN",
+                raw_data=f"Port scan: {port}".encode()
             )
             
             if self.callback:
                 self.callback(packet)
             
             packets_sent += 1
-            
-            # Simuler des ports ouverts
-            if port in [22, 80, 443, 3306]:
-                open_ports.append(port)
-            
             time.sleep(scan_speed)
         
-        self.attacks_simulated += 1
+        print(f"[AttackSimulator] Port Scan terminé: {packets_sent} paquets envoyés")
         
-        result = {
+        return {
             'type': 'Port Scan',
             'target': target_ip,
-            'source': source_ip,
             'ports_scanned': end_port - start_port + 1,
             'packets_sent': packets_sent,
-            'open_ports': open_ports
+            'status': 'completed'
         }
-        
-        print(f"[AttackSimulator] Port Scan terminé: {packets_sent} paquets envoyés")
-        return result
     
     def simulate_malware_c2(self, infected_ip: str = "192.168.1.100",
                            c2_servers: List[str] = None,
                            connections: int = 20,
                            interval: float = 0.5) -> Dict:
-        """
-        Simule une communication Malware vers serveur C&C
+        """Simule une communication malware vers serveurs C&C"""
         
-        Args:
-            infected_ip: IP de la machine infectée
-            c2_servers: Serveurs C&C
-            connections: Nombre de connexions
-            interval: Intervalle entre connexions
-        """
+        if c2_servers is None:
+            c2_servers = ['203.0.113.1', '198.51.100.42']
+        
         print(f"[AttackSimulator] Simulation Malware C2: {infected_ip} -> Serveurs C&C")
         
-        if not c2_servers:
-            c2_servers = [
-                '203.0.113.1',
-                '198.51.100.42',
-                '192.0.2.123'
-            ]
-        
-        c2_ports = [4444, 6667, 31337, 8080, 9999]
         packets_sent = 0
         
-        for i in range(connections):
+        for _ in range(connections):
             c2_server = random.choice(c2_servers)
-            c2_port = random.choice(c2_ports)
+            c2_port = random.choice([4444, 6667, 31337, 8080])
             
-            # Beacon sortant
             packet = NetworkPacket(
                 source_ip=infected_ip,
                 destination_ip=c2_server,
                 source_port=random.randint(49152, 65535),
                 destination_port=c2_port,
-                protocol='TCP',
-                payload_size=random.randint(100, 5000)
+                protocol="TCP",
+                payload_size=random.randint(500, 2000),
+                flags="PSH,ACK",
+                raw_data=b"Encrypted C&C beacon"
             )
             
             if self.callback:
@@ -327,38 +396,35 @@ class AttackSimulator:
             packets_sent += 1
             time.sleep(interval)
         
-        self.attacks_simulated += 1
+        print(f"[AttackSimulator] Malware C2 terminé: {packets_sent} paquets envoyés")
         
-        result = {
-            'type': 'Malware C2',
+        return {
+            'type': 'Malware C&C',
             'infected_host': infected_ip,
             'c2_servers': c2_servers,
             'connections': connections,
-            'packets_sent': packets_sent
+            'packets_sent': packets_sent,
+            'status': 'completed'
         }
-        
-        print(f"[AttackSimulator] Malware C2 terminé: {packets_sent} paquets envoyés")
-        return result
     
     def simulate_sql_injection(self, attacker_ip: str = "203.0.113.1",
                               target_ip: str = "192.168.1.10",
                               attempts: int = 10) -> Dict:
-        """
-        Simule des tentatives d'injection SQL
-        """
+        """Simule des attaques SQL Injection"""
+        
         print(f"[AttackSimulator] Simulation SQL Injection: {attacker_ip} -> {target_ip}")
         
         sql_payloads = [
-            "' OR '1'='1",
-            "UNION SELECT * FROM users",
-            "'; DROP TABLE users--",
-            "admin'--",
-            "1' OR '1'='1' /*"
+            b"' OR '1'='1",
+            b"admin'--",
+            b"1' UNION SELECT * FROM users--",
+            b"'; DROP TABLE users--",
+            b"1' OR '1'='1' /*"
         ]
         
         packets_sent = 0
         
-        for i in range(attempts):
+        for _ in range(attempts):
             payload = random.choice(sql_payloads)
             
             packet = NetworkPacket(
@@ -366,38 +432,34 @@ class AttackSimulator:
                 destination_ip=target_ip,
                 source_port=random.randint(49152, 65535),
                 destination_port=80,
-                protocol='HTTP',
-                payload_size=len(payload.encode()),
-                raw_data=payload.encode()
+                protocol="TCP",
+                payload_size=len(payload),
+                flags="PSH,ACK",
+                raw_data=payload
             )
             
             if self.callback:
                 self.callback(packet)
             
             packets_sent += 1
-            time.sleep(random.uniform(0.5, 2.0))
+            time.sleep(0.2)
         
-        self.attacks_simulated += 1
+        print(f"[AttackSimulator] SQL Injection terminé: {attempts} tentatives")
         
-        result = {
+        return {
             'type': 'SQL Injection',
             'attacker': attacker_ip,
             'target': target_ip,
             'attempts': attempts,
-            'packets_sent': packets_sent
+            'packets_sent': packets_sent,
+            'status': 'completed'
         }
-        
-        print(f"[AttackSimulator] SQL Injection terminé: {packets_sent} tentatives")
-        return result
     
     def simulate_brute_force(self, attacker_ip: str = "203.0.113.1",
                             target_ip: str = "192.168.1.1",
                             service: str = "ssh",
                             attempts: int = 50) -> Dict:
-        """
-        Simule une attaque brute force
-        """
-        print(f"[AttackSimulator] Simulation Brute Force {service}: {attacker_ip} -> {target_ip}")
+        """Simule une attaque brute force"""
         
         service_ports = {
             'ssh': 22,
@@ -408,6 +470,9 @@ class AttackSimulator:
         }
         
         port = service_ports.get(service, 22)
+        
+        print(f"[AttackSimulator] Simulation Brute Force {service}: {attacker_ip} -> {target_ip}")
+        
         packets_sent = 0
         
         for i in range(attempts):
@@ -416,49 +481,48 @@ class AttackSimulator:
                 destination_ip=target_ip,
                 source_port=random.randint(49152, 65535),
                 destination_port=port,
-                protocol='TCP',
-                payload_size=random.randint(50, 200)
+                protocol="TCP",
+                payload_size=random.randint(100, 500),
+                flags="PSH,ACK",
+                raw_data=f"Login attempt #{i+1}".encode()
             )
             
             if self.callback:
                 self.callback(packet)
             
             packets_sent += 1
-            time.sleep(random.uniform(0.1, 0.5))
+            time.sleep(0.1)
         
-        self.attacks_simulated += 1
+        print(f"[AttackSimulator] Brute Force terminé: {attempts} tentatives")
         
-        result = {
+        return {
             'type': 'Brute Force',
             'service': service,
             'attacker': attacker_ip,
             'target': target_ip,
             'attempts': attempts,
-            'packets_sent': packets_sent
+            'packets_sent': packets_sent,
+            'status': 'completed'
         }
-        
-        print(f"[AttackSimulator] Brute Force terminé: {packets_sent} tentatives")
-        return result
     
     def simulate_xss_attack(self, attacker_ip: str = "203.0.113.1",
                            target_ip: str = "192.168.1.10",
                            attempts: int = 10) -> Dict:
-        """
-        Simule des tentatives XSS
-        """
+        """Simule des attaques XSS"""
+        
         print(f"[AttackSimulator] Simulation XSS: {attacker_ip} -> {target_ip}")
         
         xss_payloads = [
-            "<script>alert('XSS')</script>",
-            "<img src=x onerror=alert('XSS')>",
-            "<iframe src='javascript:alert(1)'>",
-            "javascript:alert(document.cookie)",
-            "<body onload=alert('XSS')>"
+            b"<script>alert('XSS')</script>",
+            b"<img src=x onerror=alert('XSS')>",
+            b"<iframe src='javascript:alert(1)'>",
+            b"javascript:alert(document.cookie)",
+            b"<body onload=alert('XSS')>"
         ]
         
         packets_sent = 0
         
-        for i in range(attempts):
+        for _ in range(attempts):
             payload = random.choice(xss_payloads)
             
             packet = NetworkPacket(
@@ -466,40 +530,31 @@ class AttackSimulator:
                 destination_ip=target_ip,
                 source_port=random.randint(49152, 65535),
                 destination_port=80,
-                protocol='HTTP',
-                payload_size=len(payload.encode()),
-                raw_data=payload.encode()
+                protocol="TCP",
+                payload_size=len(payload),
+                flags="PSH,ACK",
+                raw_data=payload
             )
             
             if self.callback:
                 self.callback(packet)
             
             packets_sent += 1
-            time.sleep(random.uniform(0.5, 2.0))
+            time.sleep(0.2)
         
-        self.attacks_simulated += 1
+        print(f"[AttackSimulator] XSS terminé: {attempts} tentatives")
         
-        result = {
+        return {
             'type': 'XSS',
             'attacker': attacker_ip,
             'target': target_ip,
             'attempts': attempts,
-            'packets_sent': packets_sent
+            'packets_sent': packets_sent,
+            'status': 'completed'
         }
-        
-        print(f"[AttackSimulator] XSS terminé: {packets_sent} tentatives")
-        return result
     
     def get_statistics(self) -> Dict:
-        """Retourne les statistiques de simulation"""
+        """Retourne les statistiques du simulateur"""
         return {
-            'attacks_simulated': self.attacks_simulated,
-            'available_attacks': [
-                'DDoS',
-                'Port Scan',
-                'Malware C2',
-                'SQL Injection',
-                'XSS',
-                'Brute Force'
-            ]
+            'is_simulating': self.is_simulating
         }
