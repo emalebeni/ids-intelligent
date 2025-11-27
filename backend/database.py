@@ -17,6 +17,7 @@ class DatabaseManager:
     def __init__(self, db_path='../database/ids.db'):
         self.db_path = db_path
         self.conn = None
+        self.cursor = None
         
     @contextmanager
     def get_connection(self):
@@ -43,9 +44,10 @@ class DatabaseManager:
             # Connexion SQLite
             self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
             self.conn.row_factory = sqlite3.Row
+            self.cursor = self.conn.cursor()
             
             # Optimisations SQLite
-            self.conn.execute("PRAGMA journal_mode=WAL")  # Write-Ahead Logging
+            self.conn.execute("PRAGMA journal_mode=WAL")
             self.conn.execute("PRAGMA synchronous=NORMAL")
             self.conn.execute("PRAGMA cache_size=10000")
             self.conn.execute("PRAGMA temp_store=MEMORY")
@@ -76,12 +78,12 @@ class DatabaseManager:
                 type TEXT NOT NULL,
                 description TEXT,
                 source_ip TEXT,
-                target_ip TEXT,
+                destination_ip TEXT,
                 source_port INTEGER,
-                target_port INTEGER,
+                destination_port INTEGER,
                 protocol TEXT,
-                confidence_score REAL,
-                status TEXT DEFAULT 'NEW',
+                confidence REAL,
+                status TEXT DEFAULT 'active',
                 assigned_to TEXT,
                 is_notified INTEGER DEFAULT 0,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -155,7 +157,7 @@ class DatabaseManager:
             )
         """)
         
-        # Table des statistiques (nouvelle)
+        # Table des statistiques
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS statistics (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -169,7 +171,7 @@ class DatabaseManager:
             )
         """)
         
-        # Table des logs système (nouvelle)
+        # Table des logs système
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS system_logs (
                 log_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -181,7 +183,7 @@ class DatabaseManager:
             )
         """)
         
-        # Table de configuration (nouvelle)
+        # Table de configuration
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS config (
                 key TEXT PRIMARY KEY,
@@ -245,37 +247,45 @@ class DatabaseManager:
     
     # ========== MÉTHODES POUR LES ALERTES ==========
     
-    def save_alert(self, alert_dict: Dict) -> bool:
-        """Sauvegarde une alerte"""
+    def add_alert(self, alert: Dict) -> bool:
+        """
+        Ajoute une alerte dans la base de données
+        ✅ NOUVELLE MÉTHODE CORRIGÉE
+        """
         try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    INSERT INTO alerts (
-                        alert_id, timestamp, severity, type, description,
-                        source_ip, target_ip, source_port, target_port,
-                        protocol, confidence_score, status, assigned_to, is_notified
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    alert_dict['alert_id'],
-                    alert_dict['timestamp'],
-                    alert_dict['severity'],
-                    alert_dict['type'],
-                    alert_dict['description'],
-                    alert_dict.get('source_ip'),
-                    alert_dict.get('target_ip'),
-                    alert_dict.get('source_port'),
-                    alert_dict.get('target_port'),
-                    alert_dict.get('protocol'),
-                    alert_dict.get('confidence_score', 0.0),
-                    alert_dict.get('status', 'NEW'),
-                    alert_dict.get('assigned_to'),
-                    1 if alert_dict.get('is_notified') else 0
-                ))
+            query = """
+            INSERT INTO alerts (
+                alert_id, timestamp, type, severity, confidence,
+                source_ip, destination_ip, source_port, destination_port,
+                protocol, description, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            
+            self.cursor.execute(query, (
+                alert.get('id'),
+                alert.get('timestamp'),
+                alert.get('type'),
+                alert.get('severity'),
+                alert.get('confidence'),
+                alert.get('source_ip'),
+                alert.get('destination_ip'),
+                alert.get('source_port'),
+                alert.get('destination_port'),
+                alert.get('protocol'),
+                alert.get('description'),
+                alert.get('status', 'active')
+            ))
+            
+            self.conn.commit()
             return True
-        except Exception as e:
-            print(f"[DatabaseManager] Erreur sauvegarde alerte: {e}")
+            
+        except sqlite3.Error as e:
+            print(f"[DatabaseManager] Erreur ajout alerte: {e}")
             return False
+    
+    def save_alert(self, alert_dict: Dict) -> bool:
+        """Sauvegarde une alerte (alias pour add_alert)"""
+        return self.add_alert(alert_dict)
     
     def get_alerts(self, limit: int = 100, status: Optional[str] = None, 
                    severity: Optional[str] = None, type: Optional[str] = None,
@@ -416,7 +426,7 @@ class DatabaseManager:
                 total_alerts = cursor.fetchone()['count']
                 
                 # Alertes actives
-                cursor.execute("SELECT COUNT(*) as count FROM alerts WHERE status IN ('NEW', 'INVESTIGATING')")
+                cursor.execute("SELECT COUNT(*) as count FROM alerts WHERE status IN ('active', 'NEW', 'INVESTIGATING')")
                 active_alerts = cursor.fetchone()['count']
                 
                 # Incidents ouverts

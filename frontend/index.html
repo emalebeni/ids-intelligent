@@ -3,332 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IDS Intelligent - Dashboard</title>
+    <title>IDS Intelligent v3.0 - Système de Défense Avancé</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: #00ffff;
+            --secondary: #ff00ff;
+            --accent: #00ff88;
+            --danger: #ff0055;
+            --warning: #ffaa00;
+            --dark-bg: #0a0e1a;
+            --card-bg: rgba(15, 25, 45, 0.8);
+            --border: rgba(0, 255, 255, 0.3);
+            --glow: rgba(0, 255, 255, 0.5);
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: #333;
+            font-family: 'Rajdhani', sans-serif;
+            background: #0a0e1a;
+            color: #ffffff;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(125deg, #0a0e1a 0%, #1a1f35 50%, #0a0e1a 100%);
+        }
+
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(50px); }
         }
 
         .container {
-            max-width: 1800px;
-            margin: 0 auto;
-        }
-
-        header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 20px 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            height: 100vh;
+            position: relative;
         }
 
-        h1 {
-            color: #667eea;
-            font-size: 2em;
+        /* Futuristic Sidebar */
+        .sidebar {
+            width: 300px;
+            background: linear-gradient(180deg, rgba(10, 14, 26, 0.95) 0%, rgba(26, 31, 53, 0.95) 100%);
+            backdrop-filter: blur(10px);
+            border-right: 2px solid var(--border);
+            box-shadow: 0 0 30px var(--glow);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(180deg, transparent, var(--primary), transparent);
+            animation: borderPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes borderPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .logo {
+            padding: 40px 25px;
+            border-bottom: 2px solid var(--border);
+            text-align: center;
+            position: relative;
+        }
+
+        .logo h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px var(--glow);
+            animation: logoGlow 2s ease-in-out infinite;
+            letter-spacing: 2px;
+        }
+
+        @keyframes logoGlow {
+            0%, 100% { filter: drop-shadow(0 0 10px var(--primary)); }
+            50% { filter: drop-shadow(0 0 20px var(--secondary)); }
+        }
+
+        .logo .version {
+            color: var(--primary);
+            font-size: 12px;
+            margin-top: 10px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .nav-menu {
+            flex: 1;
+            padding: 30px 0;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            padding: 18px 30px;
+            cursor: pointer;
+            transition: all 0.3s;
             display: flex;
             align-items: center;
             gap: 15px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            position: relative;
+            overflow: hidden;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), transparent);
+            transition: width 0.3s;
+            opacity: 0.1;
+        }
+
+        .nav-item:hover {
+            color: var(--primary);
+            background: rgba(0, 255, 255, 0.05);
+            border-left-color: var(--primary);
+        }
+
+        .nav-item:hover::before {
+            width: 100%;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+            background: rgba(0, 255, 255, 0.1);
+            border-left: 3px solid var(--primary);
+            box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+
+        .status-bar {
+            padding: 25px;
+            border-top: 2px solid var(--border);
+            background: rgba(10, 14, 26, 0.5);
         }
 
         .status-badge {
-            display: inline-block;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: 600;
-            background: #10b981;
-            color: white;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .stat-card h3 {
-            color: #666;
-            font-size: 0.9em;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .stat-value {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            font-size: 0.85em;
-            color: #999;
-        }
-
-        .controls {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-        }
-
-        .controls h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 1.5em;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 8px;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
-            color: #333;
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            color: #333;
-        }
-
-        .btn-info {
-            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
-            color: #333;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .chart-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .chart-container h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 1.3em;
-        }
-
-        .alerts-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .alerts-container h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 1.5em;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .alert-count {
-            background: #667eea;
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.8em;
-        }
-
-        .alerts-list {
-            max-height: 500px;
-            overflow-y: auto;
-            padding-right: 10px;
-        }
-
-        .alert-item {
-            background: white;
+            gap: 12px;
             padding: 15px;
-            margin-bottom: 10px;
+            background: rgba(0, 255, 255, 0.05);
+            border: 1px solid var(--border);
             border-radius: 10px;
-            border-left: 5px solid;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            animation: slideIn 0.5s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .alert-item.critical {
-            border-left-color: #ef4444;
-        }
-
-        .alert-item.high {
-            border-left-color: #f97316;
-        }
-
-        .alert-item.medium {
-            border-left-color: #eab308;
-        }
-
-        .alert-item.low {
-            border-left-color: #3b82f6;
-        }
-
-        .alert-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .alert-type {
-            font-weight: bold;
-            color: #667eea;
-            font-size: 1.1em;
-        }
-
-        .alert-severity {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .severity-critical {
-            background: #fee2e2;
-            color: #ef4444;
-        }
-
-        .severity-high {
-            background: #ffedd5;
-            color: #f97316;
-        }
-
-        .severity-medium {
-            background: #fef3c7;
-            color: #eab308;
-        }
-
-        .severity-low {
-            background: #dbeafe;
-            color: #3b82f6;
-        }
-
-        .alert-description {
-            color: #666;
-            font-size: 0.95em;
-            margin-bottom: 8px;
-            line-height: 1.5;
-        }
-
-        .alert-footer {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.85em;
-            color: #999;
-        }
-
-        .connection-status {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 10px 20px;
-            border-radius: 25px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.9em;
+            font-size: 14px;
             font-weight: 600;
         }
 
@@ -336,308 +205,1024 @@
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            background: #10b981;
-            animation: pulse 2s infinite;
+            background: var(--danger);
+            animation: statusPulse 2s infinite;
+            box-shadow: 0 0 10px var(--danger);
         }
 
-        .status-dot.disconnected {
-            background: #ef4444;
-            animation: none;
+        .status-dot.connected {
+            background: var(--accent);
+            box-shadow: 0 0 15px var(--accent);
         }
 
-        .incident-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(239, 68, 68, 0.95);
-            backdrop-filter: blur(10px);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            max-width: 400px;
-            animation: slideInRight 0.5s ease;
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            position: relative;
+        }
+
+        .page {
             display: none;
         }
 
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(100px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        .page.active {
+            display: block;
+            animation: pageSlide 0.5s ease-out;
         }
 
-        .incident-notification h3 {
-            margin-bottom: 10px;
-            font-size: 1.2em;
+        @keyframes pageSlide {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .incident-notification p {
-            font-size: 0.95em;
-            line-height: 1.5;
+        .header {
+            background: var(--card-bg);
+            padding: 30px 40px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
         }
 
-        /* Scrollbar personnalisée */
-        .alerts-list::-webkit-scrollbar {
-            width: 8px;
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+            animation: shimmer 3s infinite;
         }
 
-        .alerts-list::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
         }
 
-        .alerts-list::-webkit-scrollbar-thumb {
-            background: #667eea;
-            border-radius: 10px;
+        .header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 32px;
+            color: var(--primary);
+            margin-bottom: 8px;
+            text-shadow: 0 0 20px var(--glow);
         }
 
-        .alerts-list::-webkit-scrollbar-thumb:hover {
-            background: #764ba2;
+        .header p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
         }
 
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
+        /* Enhanced Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #999;
+        .stat-card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
         }
 
-        .empty-state svg {
-            width: 80px;
-            height: 80px;
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at top right, rgba(0, 255, 255, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 40px rgba(0, 255, 255, 0.3);
+            border-color: var(--primary);
+        }
+
+        .stat-card:hover::after {
+            opacity: 1;
+        }
+
+        .stat-card h3 {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            font-weight: 600;
             margin-bottom: 15px;
-            opacity: 0.5;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px currentColor;
+        }
+
+        .stat-card.threats .stat-value {
+            color: var(--danger);
+        }
+
+        .stat-card.packets .stat-value {
+            color: var(--primary);
+        }
+
+        .stat-card.normal .stat-value {
+            color: var(--accent);
+        }
+
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
+        }
+
+        .chart-card h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            margin-bottom: 25px;
+            font-size: 20px;
+        }
+
+        /* GRANDIOSE SCANNER SECTION */
+        .scanner-panel {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid var(--border);
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.2);
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scanner-panel::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(0, 255, 255, 0.1), transparent 30%);
+            animation: rotate 8s linear infinite;
+        }
+
+        @keyframes rotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        .scan-controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* SCANNER ANIMATION ULTRA HITECH */
+        #scanLoader {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 60px 40px;
+        }
+
+        .scanner-circle {
+            width: 250px;
+            height: 250px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+
+        .scanner-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 3px solid transparent;
+        }
+
+        .ring-1 {
+            width: 100%;
+            height: 100%;
+            border-top-color: var(--primary);
+            border-right-color: var(--primary);
+            animation: spin 1.5s linear infinite;
+        }
+
+        .ring-2 {
+            width: 80%;
+            height: 80%;
+            border-bottom-color: var(--secondary);
+            border-left-color: var(--secondary);
+            animation: spin 2s linear infinite reverse;
+        }
+
+        .ring-3 {
+            width: 60%;
+            height: 60%;
+            border-top-color: var(--accent);
+            border-right-color: var(--accent);
+            animation: spin 2.5s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .scanner-pulse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 40px var(--primary);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.3; }
+        }
+
+        .scan-status {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px var(--glow);
+            animation: textGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes textGlow {
+            0%, 100% { text-shadow: 0 0 20px var(--primary); }
+            50% { text-shadow: 0 0 40px var(--primary), 0 0 60px var(--primary); }
+        }
+
+        .scan-progress {
+            position: relative;
+            height: 6px;
+            background: rgba(0, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 30px 0;
+        }
+
+        .scan-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
+            background-size: 200% 100%;
+            animation: progressSlide 2s linear infinite;
+            border-radius: 10px;
+            box-shadow: 0 0 20px var(--primary);
+        }
+
+        @keyframes progressSlide {
+            0% { background-position: 0% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .scan-messages {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .scan-message {
+            padding: 8px 15px;
+            margin-bottom: 5px;
+            background: rgba(0, 255, 255, 0.05);
+            border-left: 3px solid var(--accent);
+            border-radius: 5px;
+            animation: messageSlide 0.3s ease-out;
+        }
+
+        @keyframes messageSlide {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* SCANNER RESULTS ULTRA HITECH */
+        #scanResults {
+            position: relative;
+            z-index: 1;
+        }
+
+        .risk-score {
+            text-align: center;
+            padding: 50px;
+            background: linear-gradient(135deg, rgba(255, 0, 85, 0.2), rgba(255, 170, 0, 0.2));
+            border-radius: 20px;
+            margin-bottom: 30px;
+            border: 2px solid var(--danger);
+            box-shadow: 0 0 50px rgba(255, 0, 85, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .risk-score::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 0, 85, 0.1) 0%, transparent 70%);
+            animation: riskPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes riskPulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.5); opacity: 0; }
+        }
+
+        .risk-score h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 72px;
+            color: var(--danger);
+            margin-bottom: 15px;
+            text-shadow: 0 0 40px var(--danger);
+            position: relative;
+            z-index: 1;
+        }
+
+        .risk-score p {
+            font-size: 24px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Buttons Ultra Hitech */
+        .btn {
+            padding: 15px 35px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #0a0e1a;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 20px var(--glow);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #ff0088);
+            color: white;
+            border: 2px solid var(--danger);
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.5);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--accent), #00ff00);
+            color: #0a0e1a;
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning), #ffcc00);
+            color: #0a0e1a;
+            border: 2px solid var(--warning);
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.5);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #0088ff, #00ddff);
+            color: white;
+            border: 2px solid #0088ff;
+            box-shadow: 0 0 20px rgba(0, 136, 255, 0.5);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.2);
+        }
+
+        /* Simulation Cards */
+        .simulation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .simulation-card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .simulation-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: translateX(-100%);
+            transition: transform 0.3s;
+        }
+
+        .simulation-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0, 255, 255, 0.3);
+            border-color: var(--primary);
+        }
+
+        .simulation-card:hover::before {
+            transform: translateX(0);
+        }
+
+        .simulation-card h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .simulation-card p {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        /* Alerts Section */
+        .alerts-section {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
+        }
+
+        .alerts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .alerts-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .alerts-table th {
+            background: rgba(0, 255, 255, 0.1);
+            padding: 15px;
+            text-align: left;
+            font-weight: 700;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 13px;
+        }
+
+        .alerts-table td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .alerts-table tr {
+            transition: all 0.3s;
+        }
+
+        .alerts-table tr:hover {
+            background: rgba(0, 255, 255, 0.05);
+        }
+
+        .severity-badge {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .severity-badge.critical {
+            background: rgba(255, 0, 85, 0.2);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .severity-badge.high {
+            background: rgba(255, 170, 0, 0.2);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .severity-badge.medium {
+            background: rgba(255, 204, 0, 0.2);
+            color: #ffcc00;
+            border: 1px solid #ffcc00;
+        }
+
+        .severity-badge.low {
+            background: rgba(0, 136, 255, 0.2);
+            color: #0088ff;
+            border: 1px solid #0088ff;
+        }
+
+        /* Action Buttons in Alerts */
+        .alert-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-explain {
+            flex: 1;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            transition: all 0.3s;
+        }
+
+        .btn-explain:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-remediate {
+            flex: 1;
+            padding: 10px;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            transition: all 0.3s;
+        }
+
+        .btn-remediate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(249, 115, 22, 0.5);
+        }
+
+        /* Modals */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 14, 26, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 0 60px rgba(0, 255, 255, 0.3);
+            animation: modalSlide 0.3s ease-out;
+        }
+
+        @keyframes modalSlide {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .vulnerabilities-list {
+            list-style: none;
+        }
+
+        .vulnerability-item {
+            padding: 20px;
+            margin-bottom: 15px;
+            background: rgba(255, 0, 85, 0.1);
+            border-left: 4px solid var(--danger);
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .vulnerability-item:hover {
+            transform: translateX(10px);
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.3);
+        }
+
+        .vulnerability-item.high {
+            border-left-color: var(--warning);
+            background: rgba(255, 170, 0, 0.1);
+        }
+
+        .vulnerability-item.medium {
+            border-left-color: #ffcc00;
+            background: rgba(255, 204, 0, 0.1);
+        }
+
+        .vulnerability-item.low {
+            border-left-color: #0088ff;
+            background: rgba(0, 136, 255, 0.1);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Export Button */
+        .export-btn {
+            background: linear-gradient(135deg, var(--accent), #00ff00);
+            color: #0a0e1a;
+            padding: 12px 25px;
+            border-radius: 10px;
+            border: 2px solid var(--accent);
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+        }
+
+        .export-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 30px rgba(0, 255, 136, 0.7);
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 255, 255, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--secondary), var(--primary));
         }
     </style>
 </head>
 <body>
+    <div class="bg-animation"></div>
+    <div class="grid-bg"></div>
+
     <div class="container">
-        <!-- Header -->
-        <header>
-            <h1>
-                🛡️ IDS Intelligent
-                <span class="status-badge" id="systemStatus">SYSTÈME ACTIF</span>
-            </h1>
-            <div style="text-align: right;">
-                <div style="font-size: 0.9em; color: #666;">Version 2.0.0</div>
-                <div style="font-size: 0.85em; color: #999;" id="uptime">Uptime: 0s</div>
+        <!-- Futuristic Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <h1>⚡ IDS QUANTUM</h1>
+                <span class="version">v3.0 • DEFENSE SYSTEM</span>
             </div>
-        </header>
 
-        <!-- Statistiques principales -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>📦 Paquets Analysés</h3>
-                <div class="stat-value" id="packetsAnalyzed">0</div>
-                <div class="stat-label">En temps réel</div>
-            </div>
-            <div class="stat-card">
-                <h3>⚠️ Menaces Détectées</h3>
-                <div class="stat-value" id="threatsDetected">0</div>
-                <div class="stat-label">Actives</div>
-            </div>
-            <div class="stat-card">
-                <h3>🚨 Alertes Générées</h3>
-                <div class="stat-value" id="alertsGenerated">0</div>
-                <div class="stat-label">Total</div>
-            </div>
-            <div class="stat-card">
-                <h3>📊 Taux de Détection</h3>
-                <div class="stat-value" id="detectionRate">95%</div>
-                <div class="stat-label">Précision</div>
-            </div>
-        </div>
+            <nav class="nav-menu">
+                <div class="nav-item active" onclick="showPage('dashboard')">
+                    🏠 DASHBOARD
+                </div>
+                <div class="nav-item" onclick="showPage('simulations')">
+                    🎯 SIMULATIONS
+                </div>
+                <div class="nav-item" onclick="showPage('scanner')">
+                    🔍 SECURITY SCAN
+                </div>
+                <div class="nav-item" onclick="showPage('alerts')">
+                    ⚠️ ALERTS LOG
+                </div>
+            </nav>
 
-        <!-- Contrôles de simulation -->
-        <div class="controls">
-            <h2>🎮 Simulations d'Attaques</h2>
-            <div class="button-group">
-                <button class="btn btn-danger" onclick="simulateAttack('ddos')">
-                    🔴 Simuler DDoS
-                </button>
-                <button class="btn btn-warning" onclick="simulateAttack('port_scan')">
-                    🔍 Simuler Port Scan
-                </button>
-                <button class="btn btn-primary" onclick="simulateAttack('malware')">
-                    🦠 Simuler Malware C&C
-                </button>
-                <button class="btn btn-danger" onclick="simulateAttack('sql_injection')">
-                    💉 Simuler SQL Injection
-                </button>
-                <button class="btn btn-warning" onclick="simulateAttack('xss')">
-                    🎭 Simuler XSS
-                </button>
-                <button class="btn btn-info" onclick="simulateAttack('brute_force')">
-                    🔐 Simuler Brute Force
-                </button>
-                <button class="btn btn-success" onclick="exportData()">
-                    📥 Exporter Stats
-                </button>
-            </div>
-        </div>
-
-        <!-- Graphiques -->
-        <div class="charts-grid">
-            <div class="chart-container">
-                <h2>📈 Activité Réseau</h2>
-                <canvas id="activityChart"></canvas>
-            </div>
-            <div class="chart-container">
-                <h2>🎯 Types de Menaces</h2>
-                <canvas id="threatsChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Liste des alertes -->
-        <div class="alerts-container">
-            <h2>
-                🚨 Alertes Récentes
-                <span class="alert-count" id="alertCount">0</span>
-            </h2>
-            <div class="alerts-list" id="alertsList">
-                <div class="empty-state">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                    </svg>
-                    <p>Aucune alerte pour le moment</p>
-                    <p style="font-size: 0.85em; margin-top: 5px;">Lancez une simulation pour voir les alertes</p>
+            <div class="status-bar">
+                <div class="status-badge">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="connectionStatus">OFFLINE</span>
                 </div>
             </div>
         </div>
 
-        <!-- Status de connexion -->
-        <div class="connection-status">
-            <div class="status-dot" id="statusDot"></div>
-            <span id="connectionText">Connecté</span>
-        </div>
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Dashboard Page -->
+            <div class="page active" id="dashboard">
+                <div class="header">
+                    <h2>⚡ COMMAND CENTER</h2>
+                    <p>Real-time Network Security Monitoring</p>
+                </div>
 
-        <!-- Notification d'incident -->
-        <div class="incident-notification" id="incidentNotification">
-            <h3>🚨 INCIDENT CRITIQUE</h3>
-            <p id="incidentMessage"></p>
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card packets">
+                        <h3>PACKETS ANALYZED</h3>
+                        <div class="stat-value" id="totalPackets">0</div>
+                        <p>Total Captured</p>
+                    </div>
+                    <div class="stat-card threats">
+                        <h3>THREATS DETECTED</h3>
+                        <div class="stat-value" id="threatsDetected">0</div>
+                        <p>Active Alerts</p>
+                    </div>
+                    <div class="stat-card normal">
+                        <h3>CLEAN TRAFFIC</h3>
+                        <div class="stat-value" id="normalTraffic">0</div>
+                        <p>Safe Packets</p>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>⚡ THREAT DISTRIBUTION</h3>
+                        <canvas id="threatChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>📡 RECENT ALERTS</h3>
+                        <div id="recentAlerts" style="max-height: 350px; overflow-y: auto;">
+                            <p style="text-align: center; color: rgba(255,255,255,0.5); padding: 30px;">
+                                No alerts detected
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simulations Page -->
+            <div class="page" id="simulations">
+                <div class="header">
+                    <h2>🎯 ATTACK SIMULATOR</h2>
+                    <p>Test Detection Capabilities</p>
+                </div>
+
+                <div class="simulation-grid">
+                    <div class="simulation-card">
+                        <h3>🌊 DDOS ATTACK</h3>
+                        <p>Massive SYN flood simulation</p>
+                        <button class="btn btn-danger" onclick="simulateAttack('ddos')">
+                            LAUNCH DDOS
+                        </button>
+                    </div>
+
+                    <div class="simulation-card">
+                        <h3>🔍 PORT SCAN</h3>
+                        <p>Network reconnaissance simulation</p>
+                        <button class="btn btn-warning" onclick="simulateAttack('port_scan')">
+                            LAUNCH SCAN
+                        </button>
+                    </div>
+
+                    <div class="simulation-card">
+                        <h3>🦠 MALWARE C&C</h3>
+                        <p>Command & control communication</p>
+                        <button class="btn btn-danger" onclick="simulateAttack('malware')">
+                            LAUNCH C2
+                        </button>
+                    </div>
+
+                    <div class="simulation-card">
+                        <h3>💉 SQL INJECTION</h3>
+                        <p>Database attack simulation</p>
+                        <button class="btn btn-warning" onclick="simulateAttack('sql_injection')">
+                            LAUNCH SQL
+                        </button>
+                    </div>
+
+                    <div class="simulation-card">
+                        <h3>🎭 XSS ATTACK</h3>
+                        <p>JavaScript injection simulation</p>
+                        <button class="btn btn-info" onclick="simulateAttack('xss')">
+                            LAUNCH XSS
+                        </button>
+                    </div>
+
+                    <div class="simulation-card">
+                        <h3>🔐 BRUTE FORCE</h3>
+                        <p>Password cracking simulation</p>
+                        <button class="btn btn-warning" onclick="simulateAttack('brute_force')">
+                            LAUNCH BRUTE
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scanner Page -->
+            <div class="page" id="scanner">
+                <div class="header">
+                    <h2>🔍 SECURITY SCANNER</h2>
+                    <p>Advanced System Analysis</p>
+                </div>
+
+                <div class="scanner-panel">
+                    <div class="scan-controls">
+                        <button class="btn btn-primary" onclick="startFullScan()">
+                            🔍 FULL SCAN
+                        </button>
+                        <button class="btn btn-info" onclick="quickPortScan()">
+                            ⚡ QUICK SCAN
+                        </button>
+                        <button class="btn btn-success" onclick="checkFirewall()">
+                            🛡️ FIREWALL
+                        </button>
+                    </div>
+
+                    <!-- ULTRA HITECH SCANNER ANIMATION -->
+                    <div id="scanLoader" class="hidden">
+                        <div class="scanner-circle">
+                            <div class="scanner-ring ring-1"></div>
+                            <div class="scanner-ring ring-2"></div>
+                            <div class="scanner-ring ring-3"></div>
+                            <div class="scanner-pulse"></div>
+                        </div>
+                        <div class="scan-status">⚡ SCANNING NETWORK ⚡</div>
+                        <div class="scan-progress">
+                            <div class="scan-progress-bar"></div>
+                        </div>
+                        <div class="scan-messages" id="scanMessages">
+                            <div class="scan-message">🔍 Initializing security scan...</div>
+                            <div class="scan-message">📡 Analyzing open ports...</div>
+                            <div class="scan-message">🛡️ Checking firewall status...</div>
+                            <div class="scan-message">🔒 Scanning for vulnerabilities...</div>
+                            <div class="scan-message">⚡ Detecting suspicious connections...</div>
+                        </div>
+                    </div>
+
+                    <!-- GRANDIOSE RESULTS -->
+                    <div id="scanResults" class="hidden">
+                        <div class="risk-score">
+                            <h3 id="riskScore">0/100</h3>
+                            <p id="riskLevel">RISK SCORE</p>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-bottom: 30px;">
+                            <div class="stat-card">
+                                <h3>OPEN PORTS</h3>
+                                <div class="stat-value" id="openPortsCount" style="color: var(--warning);">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>SUSPICIOUS CONN.</h3>
+                                <div class="stat-value" id="suspiciousConnCount" style="color: var(--danger);">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <h3>SUSPECT PROCESS</h3>
+                                <div class="stat-value" id="suspiciousProcsCount" style="color: var(--danger);">0</div>
+                            </div>
+                        </div>
+
+                        <h3 style="margin-bottom: 20px; font-family: 'Orbitron', sans-serif; color: var(--primary);">
+                            🚨 VULNERABILITIES DETECTED
+                        </h3>
+                        <ul class="vulnerabilities-list" id="vulnerabilitiesList"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts Page -->
+            <div class="page" id="alerts">
+                <div class="header">
+                    <h2>⚠️ ALERTS LOG</h2>
+                    <p>Complete Threat History</p>
+                </div>
+
+                <div class="alerts-section">
+                    <div class="alerts-header">
+                        <h3 style="font-family: 'Orbitron', sans-serif; color: var(--primary);">RECENT ALERTS</h3>
+                        <button class="export-btn" onclick="exportAlerts()">
+                            📄 EXPORT PDF
+                        </button>
+                    </div>
+                    <table class="alerts-table">
+                        <thead>
+                            <tr>
+                                <th>TIME</th>
+                                <th>TYPE</th>
+                                <th>SEVERITY</th>
+                                <th>SOURCE</th>
+                                <th>DESTINATION</th>
+                                <th>DESCRIPTION</th>
+                                <th>ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alertsTableBody">
+                            <tr>
+                                <td colspan="7" style="text-align: center; color: rgba(255,255,255,0.5); padding: 40px;">
+                                    No alerts recorded
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Configuration
-        const API_BASE = window.location.origin;
-        const socket = io(API_BASE);
+        // WebSocket Connection
+        const socket = io('http://localhost:5000');
+        let threatChart = null;
 
-        // Variables globales
-        let alerts = [];
-        let activityData = {
-            labels: [],
-            packets: [],
-            threats: []
-        };
-        let threatTypesData = {
-            'DDoS': 0,
-            'Port Scan': 0,
-            'Malware': 0,
-            'Intrusion': 0,
-            'SQL Injection': 0,
-            'XSS': 0,
-            'Brute Force': 0,
-            'Unknown': 0
-        };
-
-        // Initialisation des graphiques
-        const activityCtx = document.getElementById('activityChart').getContext('2d');
-        const activityChart = new Chart(activityCtx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [
-                    {
-                        label: 'Paquets/sec',
-                        data: [],
-                        borderColor: '#667eea',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'Menaces/sec',
-                        data: [],
-                        borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-
-        const threatsCtx = document.getElementById('threatsChart').getContext('2d');
-        const threatsChart = new Chart(threatsCtx, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(threatTypesData),
-                datasets: [{
-                    data: Object.values(threatTypesData),
-                    backgroundColor: [
-                        '#ef4444',
-                        '#f97316',
-                        '#eab308',
-                        '#10b981',
-                        '#3b82f6',
-                        '#8b5cf6',
-                        '#ec4899',
-                        '#6b7280'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'right'
-                    }
-                }
-            }
-        });
-
-        // WebSocket événements
         socket.on('connect', () => {
-            console.log('✅ Connecté au serveur WebSocket');
-            updateConnectionStatus(true);
+            console.log('WebSocket connected');
+            document.getElementById('connectionStatus').textContent = 'ONLINE';
+            document.getElementById('statusDot').classList.add('connected');
+            loadStats();
         });
 
         socket.on('disconnect', () => {
-            console.log('❌ Déconnecté du serveur WebSocket');
-            updateConnectionStatus(false);
+            console.log('WebSocket disconnected');
+            document.getElementById('connectionStatus').textContent = 'OFFLINE';
+            document.getElementById('statusDot').classList.remove('connected');
         });
 
         socket.on('stats_update', (data) => {
             updateStats(data);
-            updateActivityChart(data);
         });
 
         socket.on('new_alert', (alert) => {
@@ -645,212 +1230,580 @@
             playAlertSound();
         });
 
-        socket.on('new_incident', (incident) => {
-            showIncidentNotification(incident);
+        socket.on('scan_completed', (results) => {
+            displayScanResults(results);
         });
 
-        socket.on('attack_completed', (result) => {
-            console.log('✅ Attaque simulée terminée:', result);
-        });
-
-        // Fonctions de mise à jour
-        function updateStats(data) {
-            document.getElementById('packetsAnalyzed').textContent = data.packets_analyzed || 0;
-            document.getElementById('threatsDetected').textContent = data.threats_detected || 0;
-            document.getElementById('alertsGenerated').textContent = data.alerts_generated || 0;
-            
-            const detectionRate = data.detection_rate || 95;
-            document.getElementById('detectionRate').textContent = detectionRate.toFixed(1) + '%';
-
-            // Mise à jour des types de menaces
-            if (data.threat_types) {
-                Object.keys(threatTypesData).forEach(key => {
-                    threatTypesData[key] = data.threat_types[key] || 0;
-                });
-                threatsChart.data.datasets[0].data = Object.values(threatTypesData);
-                threatsChart.update();
-            }
+        // Navigation
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+            event.target.classList.add('active');
         }
 
-        function updateActivityChart(data) {
-            const now = new Date().toLocaleTimeString();
-            
-            activityData.labels.push(now);
-            activityData.packets.push(Math.random() * 100); // Simulé
-            activityData.threats.push(data.threats_detected || 0);
-
-            // Garder seulement les 20 derniers points
-            if (activityData.labels.length > 20) {
-                activityData.labels.shift();
-                activityData.packets.shift();
-                activityData.threats.shift();
-            }
-
-            activityChart.data.labels = activityData.labels;
-            activityChart.data.datasets[0].data = activityData.packets;
-            activityChart.data.datasets[1].data = activityData.threats;
-            activityChart.update();
-        }
-
-        function addAlert(alert) {
-            alerts.unshift(alert);
-            
-            // Garder seulement les 20 dernières alertes
-            if (alerts.length > 20) {
-                alerts.pop();
-            }
-
-            renderAlerts();
-        }
-
-        function renderAlerts() {
-            const alertsList = document.getElementById('alertsList');
-            const alertCount = document.getElementById('alertCount');
-            
-            alertCount.textContent = alerts.length;
-
-            if (alerts.length === 0) {
-                alertsList.innerHTML = `
-                    <div class="empty-state">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                        </svg>
-                        <p>Aucune alerte pour le moment</p>
-                        <p style="font-size: 0.85em; margin-top: 5px;">Lancez une simulation pour voir les alertes</p>
-                    </div>
-                `;
-                return;
-            }
-
-            alertsList.innerHTML = alerts.map(alert => {
-                const severityClass = alert.severity.toLowerCase();
-                return `
-                    <div class="alert-item ${severityClass}">
-                        <div class="alert-header">
-                            <span class="alert-type">${alert.type}</span>
-                            <span class="alert-severity severity-${severityClass}">${alert.severity}</span>
-                        </div>
-                        <div class="alert-description">
-                            ${alert.description}
-                        </div>
-                        <div class="alert-footer">
-                            <span>🌐 ${alert.source} → ${alert.target}</span>
-                            <span>⏱️ ${alert.time}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function updateConnectionStatus(connected) {
-            const statusDot = document.getElementById('statusDot');
-            const connectionText = document.getElementById('connectionText');
-            
-            if (connected) {
-                statusDot.classList.remove('disconnected');
-                connectionText.textContent = '🟢 Connecté';
-            } else {
-                statusDot.classList.add('disconnected');
-                connectionText.textContent = '🔴 Déconnecté';
-            }
-        }
-
-        function showIncidentNotification(incident) {
-            const notification = document.getElementById('incidentNotification');
-            const message = document.getElementById('incidentMessage');
-            
-            message.textContent = incident.description || 'Un incident critique a été détecté';
-            notification.style.display = 'block';
-
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 5000);
-        }
-
-        function playAlertSound() {
-            // Créer un beep sonore
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.value = 800;
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.5);
-        }
-
-        // Fonctions de simulation
-        async function simulateAttack(type) {
+        // Load Stats
+        async function loadStats() {
             try {
-                const response = await fetch(`${API_BASE}/api/simulate/${type}`, {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                updateStats(data.stats);
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Update Stats
+        function updateStats(stats) {
+            document.getElementById('totalPackets').textContent = stats.total_packets || 0;
+            document.getElementById('threatsDetected').textContent = stats.threats_detected || 0;
+            document.getElementById('normalTraffic').textContent = stats.normal_traffic || 0;
+            
+            updateThreatChart(stats.threats_by_type || {});
+        }
+
+        // Initialize Threat Chart
+        function initThreatChart() {
+            const ctx = document.getElementById('threatChart').getContext('2d');
+            threatChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['DDoS', 'Port Scan', 'Malware C&C', 'SQL Injection', 'XSS', 'Brute Force', 'Suspicious', 'Unknown'],
+                    datasets: [{
+                        data: [0, 0, 0, 0, 0, 0, 0, 0],
+                        backgroundColor: [
+                            '#ff0055',
+                            '#ffaa00',
+                            '#ff00ff',
+                            '#00ff88',
+                            '#00ffff',
+                            '#ff8800',
+                            '#8800ff',
+                            '#666666'
+                        ],
+                        borderColor: 'rgba(0, 255, 255, 0.3)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: 'rgba(255, 255, 255, 0.8)',
+                                font: {
+                                    family: "'Rajdhani', sans-serif",
+                                    size: 13
+                                },
+                                padding: 15
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update Threat Chart
+        function updateThreatChart(threatsByType) {
+            if (!threatChart) return;
+            
+            const data = [
+                threatsByType['DDoS'] || 0,
+                threatsByType['Port Scan'] || 0,
+                threatsByType['Malware C&C'] || 0,
+                threatsByType['SQL Injection'] || 0,
+                threatsByType['XSS'] || 0,
+                threatsByType['Brute Force'] || 0,
+                threatsByType['Suspicious Activity'] || 0,
+                threatsByType['Unknown'] || 0
+            ];
+            
+            threatChart.data.datasets[0].data = data;
+            threatChart.update();
+        }
+
+        // Add Alert
+        function addAlert(alert) {
+            const recentAlerts = document.getElementById('recentAlerts');
+            
+            if (recentAlerts.querySelector('p')) {
+                recentAlerts.innerHTML = '';
+            }
+            
+            const alertDiv = document.createElement('div');
+            alertDiv.style.cssText = 'padding: 15px; margin-bottom: 12px; background: rgba(0, 255, 255, 0.05); border-left: 4px solid #ff0055; border-radius: 10px; transition: all 0.3s;';
+            
+            const severityColor = {
+                'CRITICAL': '#ff0055',
+                'HIGH': '#ffaa00',
+                'MEDIUM': '#ffcc00',
+                'LOW': '#0088ff'
+            }[alert.severity] || '#666666';
+            
+            alertDiv.style.borderLeftColor = severityColor;
+            
+            const time = new Date(alert.timestamp).toLocaleTimeString('fr-FR');
+            
+            alertDiv.innerHTML = `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <strong style="color: ${severityColor}; font-family: 'Orbitron', sans-serif;">${alert.type}</strong>
+                    <span style="font-size: 12px; color: rgba(255,255,255,0.5);">${time}</span>
+                </div>
+                <div style="font-size: 14px; color: rgba(255,255,255,0.7);">
+                    ${alert.source_ip} → ${alert.destination_ip}:${alert.destination_port}
+                </div>
+                <div class="alert-actions">
+                    <button onclick="explainAlert('${alert.id}')" class="btn-explain">
+                        📖 Explain
+                    </button>
+                    <button onclick="getRemediation('${alert.type}', '${alert.severity}', '${alert.id}')" class="btn-remediate">
+                        🔧 Fix
+                    </button>
+                </div>
+            `;
+            
+            alertDiv.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateX(5px)';
+                this.style.boxShadow = `0 0 20px ${severityColor}40`;
+            });
+            
+            alertDiv.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateX(0)';
+                this.style.boxShadow = 'none';
+            });
+            
+            recentAlerts.insertBefore(alertDiv, recentAlerts.firstChild);
+            
+            while (recentAlerts.children.length > 10) {
+                recentAlerts.removeChild(recentAlerts.lastChild);
+            }
+            
+            addAlertToTable(alert);
+        }
+
+        // Add Alert to Table
+        function addAlertToTable(alert) {
+            const tbody = document.getElementById('alertsTableBody');
+            
+            if (tbody.querySelector('td[colspan="7"]')) {
+                tbody.innerHTML = '';
+            }
+            
+            const row = tbody.insertRow(0);
+            const time = new Date(alert.timestamp).toLocaleTimeString('fr-FR');
+            
+            row.innerHTML = `
+                <td>${time}</td>
+                <td style="font-family: 'Orbitron', sans-serif;">${alert.type}</td>
+                <td><span class="severity-badge ${alert.severity.toLowerCase()}">${alert.severity}</span></td>
+                <td>${alert.source_ip}</td>
+                <td>${alert.destination_ip}:${alert.destination_port}</td>
+                <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${alert.description}
+                </td>
+                <td>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="explainAlert('${alert.id}')" 
+                                style="padding: 6px 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                            📖
+                        </button>
+                        <button onclick="getRemediation('${alert.type}', '${alert.severity}', '${alert.id}')" 
+                                style="padding: 6px 12px; background: linear-gradient(135deg, #f97316, #ea580c); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                            🔧
+                        </button>
+                    </div>
+                </td>
+            `;
+            
+            while (tbody.rows.length > 50) {
+                tbody.deleteRow(tbody.rows.length - 1);
+            }
+        }
+
+        // ==================== EXPLICATIONS DES ALERTES ====================
+
+        async function explainAlert(alertId) {
+            try {
+                const response = await fetch(`/api/explain/alert/${alertId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showExplanationModal(data.simple_alert);
+                } else {
+                    alert('Unable to get explanation');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error fetching explanation');
+            }
+        }
+
+        function showExplanationModal(simpleAlert) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            
+            const severityColors = {
+                'CRITICAL': '#ff0055',
+                'HIGH': '#ffaa00',
+                'MEDIUM': '#ffcc00',
+                'LOW': '#0088ff'
+            };
+            
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                        <h2 style="margin: 0; color: var(--primary); font-family: 'Orbitron', sans-serif; font-size: 26px;">
+                            📖 ALERT EXPLANATION
+                        </h2>
+                        <button onclick="this.closest('.modal').remove()" 
+                                style="background: none; border: none; font-size: 32px; cursor: pointer; color: rgba(255,255,255,0.5);">
+                            ×
+                        </button>
+                    </div>
+                    
+                    <div style="background: linear-gradient(135deg, ${severityColors[simpleAlert.severity]}20, transparent); padding: 25px; border-radius: 12px; margin-bottom: 25px; border-left: 4px solid ${severityColors[simpleAlert.severity]};">
+                        <div style="color: ${severityColors[simpleAlert.severity]}; font-size: 20px; font-weight: 700; margin-bottom: 10px; font-family: 'Orbitron', sans-serif;">
+                            ${simpleAlert.title}
+                        </div>
+                        <div style="color: rgba(255,255,255,0.7); font-size: 14px;">
+                            ${simpleAlert.timestamp}
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(0, 255, 255, 0.05); padding: 25px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid var(--primary);">
+                        <div style="color: var(--primary); font-size: 13px; text-transform: uppercase; font-weight: 700; margin-bottom: 12px; letter-spacing: 2px;">
+                            🎯 WHAT HAPPENED
+                        </div>
+                        <div style="color: rgba(255,255,255,0.8); font-size: 15px; line-height: 1.7;">
+                            ${simpleAlert.what_happened}
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(255, 170, 0, 0.05); padding: 25px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid var(--warning);">
+                        <div style="color: var(--warning); font-size: 13px; text-transform: uppercase; font-weight: 700; margin-bottom: 12px; letter-spacing: 2px;">
+                            ⚠️ WHY IT'S DANGEROUS
+                        </div>
+                        <div style="color: rgba(255,255,255,0.8); font-size: 15px; line-height: 1.7;">
+                            ${simpleAlert.why_dangerous}
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(0, 255, 136, 0.05); padding: 25px; border-radius: 12px; border-left: 4px solid var(--accent);">
+                        <div style="color: var(--accent); font-size: 13px; text-transform: uppercase; font-weight: 700; margin-bottom: 12px; letter-spacing: 2px;">
+                            💡 WHAT TO DO
+                        </div>
+                        <div style="color: rgba(255,255,255,0.8); font-size: 15px; line-height: 1.7;">
+                            ${simpleAlert.what_to_do}
+                        </div>
+                    </div>
+                    
+                    <button onclick="getRemediation('${simpleAlert.type}', '${simpleAlert.severity}', '${simpleAlert.id}')" 
+                            class="btn btn-warning" style="width: 100%; margin-top: 25px;">
+                        🔧 VIEW DETAILED FIX PLAN
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
+        // ==================== REMÉDIATION ====================
+
+        async function getRemediation(threatType, severity, alertId) {
+            try {
+                const response = await fetch('/api/remediation/plan', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({})
+                    body: JSON.stringify({
+                        threat_type: threatType,
+                        severity: severity,
+                        alert_details: {
+                            alert_id: alertId
+                        }
+                    })
                 });
-
-                const result = await response.json();
-                console.log('✅ Simulation lancée:', result);
                 
-                // Afficher une notification
-                alert(`Simulation ${type} lancée ! Observez les alertes qui arrivent.`);
-            } catch (error) {
-                console.error('❌ Erreur simulation:', error);
-                alert('Erreur lors de la simulation. Vérifiez que le serveur est démarré.');
-            }
-        }
-
-        async function exportData() {
-            try {
-                // Export en PDF par défaut
-                const response = await fetch(`${API_BASE}/api/export/alerts?format=pdf`);
-                const result = await response.json();
+                const data = await response.json();
                 
-                if (result.filename) {
-                    // Télécharger le fichier PDF
-                    const downloadUrl = `${API_BASE}/api/download/${result.filename}`;
-                    
-                    // Créer un lien temporaire et cliquer dessus
-                    const link = document.createElement('a');
-                    link.href = downloadUrl;
-                    link.download = result.filename;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    alert(`✅ Export PDF réussi !\n📊 ${result.count} alertes exportées\n📥 Téléchargement de ${result.filename}...`);
+                if (data.success) {
+                    showRemediationModal(data.plan);
                 } else {
-                    alert(`✅ Export réussi ! ${result.count} alertes exportées.`);
+                    alert('Unable to get remediation plan');
                 }
             } catch (error) {
-                console.error('❌ Erreur export:', error);
-                alert('❌ Erreur lors de l\'export PDF. Vérifiez la console.');
+                console.error('Error:', error);
+                alert('Error fetching remediation plan');
             }
         }
 
-        // Charger les statistiques initiales
-        async function loadInitialData() {
+        function showRemediationModal(plan) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            
+            const urgencyColors = {
+                'IMMEDIATE': '#ff0055',
+                'HIGH': '#ffaa00',
+                'MEDIUM': '#ffcc00',
+                'LOW': '#0088ff'
+            };
+            
+            const stepsHTML = plan.steps.map((step, index) => `
+                <div style="background: rgba(0, 255, 255, 0.05); padding: 25px; border-radius: 12px; margin-bottom: 20px; border-left: 5px solid ${urgencyColors[step.urgency]}; transition: all 0.3s;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                        <div>
+                            <div style="color: rgba(255,255,255,0.5); font-size: 12px; font-weight: 700; margin-bottom: 8px; letter-spacing: 2px;">
+                                STEP ${index + 1} • ${step.urgency}
+                            </div>
+                            <div style="color: var(--primary); font-size: 18px; font-weight: 700; font-family: 'Orbitron', sans-serif;">
+                                ${step.title}
+                            </div>
+                        </div>
+                        <span style="background: ${urgencyColors[step.urgency]}20; color: ${urgencyColors[step.urgency]}; padding: 6px 15px; border-radius: 20px; font-size: 11px; font-weight: 700; border: 1px solid ${urgencyColors[step.urgency]};">
+                            ${step.urgency}
+                        </span>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 15px; line-height: 1.7; margin-bottom: 20px;">
+                        ${step.description}
+                    </div>
+                    <div style="background: rgba(10, 14, 26, 0.5); padding: 20px; border-radius: 10px; font-family: 'Courier New', monospace; font-size: 14px; color: var(--accent); overflow-x: auto; border: 1px solid var(--border);">
+                        ${step.command || step.action}
+                    </div>
+                    ${step.action_id ? `
+                        <button onclick="executeRemediation('${step.action_id}', '${plan.threat_type}')" 
+                                class="btn btn-success" style="margin-top: 15px;">
+                            ✅ EXECUTE ACTION
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('');
+            
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 900px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                        <h2 style="margin: 0; color: var(--primary); font-family: 'Orbitron', sans-serif; font-size: 28px;">
+                            🔧 REMEDIATION PLAN
+                        </h2>
+                        <button onclick="this.closest('.modal').remove()" 
+                                style="background: none; border: none; font-size: 32px; cursor: pointer; color: rgba(255,255,255,0.5);">
+                            ×
+                        </button>
+                    </div>
+                    
+                    <div style="background: linear-gradient(135deg, rgba(255, 170, 0, 0.2), rgba(255, 0, 85, 0.2)); padding: 30px; border-radius: 15px; margin-bottom: 30px; border: 2px solid var(--warning);">
+                        <div style="font-size: 24px; font-weight: 900; margin-bottom: 12px; font-family: 'Orbitron', sans-serif; color: var(--primary);">
+                            ${plan.threat_type}
+                        </div>
+                        <div style="font-size: 15px; color: rgba(255,255,255,0.8);">
+                            Level: ${plan.severity} • ${plan.steps.length} Steps • Est. Time: ${plan.estimated_time}
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(255, 170, 0, 0.1); padding: 25px; border-radius: 12px; margin-bottom: 30px; border-left: 4px solid var(--warning);">
+                        <div style="color: var(--warning); font-size: 13px; font-weight: 700; margin-bottom: 12px; letter-spacing: 2px;">
+                            ⚠️ WARNING
+                        </div>
+                        <div style="color: rgba(255,255,255,0.8); font-size: 14px; line-height: 1.7;">
+                            ${plan.warnings.join(' • ')}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <h3 style="color: var(--primary); font-size: 20px; margin-bottom: 20px; font-family: 'Orbitron', sans-serif;">
+                            📋 CORRECTION STEPS
+                        </h3>
+                        ${stepsHTML}
+                    </div>
+                    
+                    <div style="background: rgba(0, 255, 136, 0.05); padding: 25px; border-radius: 12px; border-left: 4px solid var(--accent);">
+                        <div style="color: var(--accent); font-size: 13px; font-weight: 700; margin-bottom: 15px; letter-spacing: 2px;">
+                            💡 FUTURE PREVENTION
+                        </div>
+                        <ul style="margin: 0; padding-left: 25px; color: rgba(255,255,255,0.8); font-size: 14px; line-height: 2;">
+                            ${plan.prevention_tips.map(tip => `<li>${tip}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
+        async function executeRemediation(actionId, threatType) {
+            if (!confirm('⚠️ Execute this remediation action? This may modify your system configuration.')) {
+                return;
+            }
+            
             try {
-                const response = await fetch(`${API_BASE}/api/stats`);
+                const response = await fetch('/api/remediation/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action_id: actionId,
+                        alert_details: {
+                            threat_type: threatType
+                        }
+                    })
+                });
+                
                 const data = await response.json();
-                updateStats(data.realtime || {});
+                
+                if (data.success) {
+                    alert(`✅ Action executed successfully!\n\n${data.result.message}`);
+                } else {
+                    alert(`❌ Execution failed:\n\n${data.result.message || 'Unknown error'}`);
+                }
             } catch (error) {
-                console.error('❌ Erreur chargement données:', error);
+                console.error('Error:', error);
+                alert('❌ Error executing action');
             }
         }
 
-        // Initialisation
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 Dashboard IDS Intelligent chargé');
-            loadInitialData();
+        // Simulate Attack
+        async function simulateAttack(type) {
+            const endpoints = {
+                'ddos': '/api/simulate/ddos',
+                'port_scan': '/api/simulate/port_scan',
+                'malware': '/api/simulate/malware',
+                'sql_injection': '/api/simulate/sql_injection',
+                'xss': '/api/simulate/xss',
+                'brute_force': '/api/simulate/brute_force'
+            };
+            
+            try {
+                const response = await fetch(endpoints[type], {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const data = await response.json();
+                alert(`✅ ${data.message}`);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Simulation error');
+            }
+        }
+
+        // Start Full Scan
+        async function startFullScan() {
+            document.getElementById('scanLoader').classList.remove('hidden');
+            document.getElementById('scanResults').classList.add('hidden');
+            
+            try {
+                const response = await fetch('/api/scan/full', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                console.log('Scan started:', data.message);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('scanLoader').classList.add('hidden');
+                alert('❌ Scan error');
+            }
+        }
+
+        // Display Scan Results
+        function displayScanResults(results) {
+            document.getElementById('scanLoader').classList.add('hidden');
+            document.getElementById('scanResults').classList.remove('hidden');
+            
+            document.getElementById('riskScore').textContent = `${results.risk_score}/100`;
+            document.getElementById('openPortsCount').textContent = results.open_ports.length;
+            document.getElementById('suspiciousConnCount').textContent = results.suspicious_connections.length;
+            document.getElementById('suspiciousProcsCount').textContent = results.suspicious_processes.length;
+            
+            const riskLevel = document.getElementById('riskLevel');
+            if (results.risk_score > 70) {
+                riskLevel.textContent = 'CRITICAL';
+                riskLevel.style.color = '#ff0055';
+            } else if (results.risk_score > 40) {
+                riskLevel.textContent = 'HIGH';
+                riskLevel.style.color = '#ffaa00';
+            } else {
+                riskLevel.textContent = 'MODERATE';
+                riskLevel.style.color = '#ffcc00';
+            }
+            
+            const vulnList = document.getElementById('vulnerabilitiesList');
+            vulnList.innerHTML = '';
+            
+            results.vulnerabilities.forEach(vuln => {
+                const li = document.createElement('li');
+                li.className = `vulnerability-item ${vuln.severity.toLowerCase()}`;
+                li.innerHTML = `
+                    <strong style="color: var(--danger); font-family: 'Orbitron', sans-serif;">${vuln.severity}</strong>: ${vuln.description}
+                `;
+                vulnList.appendChild(li);
+            });
+        }
+
+        // Quick Port Scan
+        async function quickPortScan() {
+            try {
+                const response = await fetch('/api/scan/ports');
+                const data = await response.json();
+                alert(`✅ Scan complete: ${data.total} open ports detected`);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Check Firewall
+        async function checkFirewall() {
+            try {
+                const response = await fetch('/api/scan/firewall');
+                const data = await response.json();
+                const status = data.firewall.enabled ? '✅ ENABLED' : '❌ DISABLED';
+                alert(`Firewall: ${status}`);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Export Alerts
+        async function exportAlerts() {
+            try {
+                const response = await fetch('/api/export/alerts?format=pdf');
+                const data = await response.json();
+                if (data.filename) {
+                    window.open(`/api/download/${data.filename}`, '_blank');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Export error');
+            }
+        }
+
+        // Alert Sound
+        function playAlertSound() {
+            // Optional: Add alert sound
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            initThreatChart();
+            loadStats();
         });
     </script>
 </body>

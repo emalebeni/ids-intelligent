@@ -13,7 +13,7 @@ import time
 import json
 import random
 from datetime import datetime, timedelta
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 # Ajouter le répertoire parent au path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -112,7 +112,7 @@ system_state = {
 def packet_callback(packet):
     """
     Callback appelé pour chaque paquet capturé
-    VERSION AMÉLIORÉE avec classification correcte
+    ✅ VERSION CORRIGÉE - Classification correcte
     """
     global current_stats, alert_history, traffic_buffer
     
@@ -129,79 +129,42 @@ def packet_callback(packet):
         if len(traffic_buffer) > 100:
             traffic_buffer.pop(0)
         
-        # ÉTAPE 1 : EXTRACTION DES FEATURES
-        features = {
-            'source_ip': packet_dict.get('source_ip', ''),
-            'destination_ip': packet_dict.get('destination_ip', ''),
-            'source_port': packet_dict.get('source_port', 0),
-            'destination_port': packet_dict.get('destination_port', 0),
-            'protocol': packet_dict.get('protocol', 'TCP'),
-            'payload_size': packet_dict.get('payload_size', 0),
-            'flags': packet_dict.get('flags', ''),
-            'raw_data': packet_dict.get('raw_data', '')
-        }
+        # ✅ CLASSIFICATION DE LA MENACE (retourne un Dict ou None)
+        alert = classify_threat(packet_dict)
         
-        # ÉTAPE 2 : CLASSIFICATION INTELLIGENTE
-        threat_type = classify_threat(features)
-        
-        # ÉTAPE 3 : DÉTECTION D'ANOMALIE via ML Engine
-        is_anomaly, confidence = ml_engine.anomaly_detector.predict(features)
-        
-        # ÉTAPE 4 : SI MENACE DÉTECTÉE → CRÉER ALERTE
-        if is_anomaly and confidence > 0.3:
-            
-            # Détermination de la sévérité
-            if confidence > 0.8:
-                severity = "CRITICAL"
-            elif confidence > 0.6:
-                severity = "HIGH"
-            elif confidence > 0.4:
-                severity = "MEDIUM"
-            else:
-                severity = "LOW"
+        # Si une menace est détectée
+        if alert:
+            # Extraire le type de menace
+            threat_type = alert['type']
             
             # Mise à jour des statistiques
             current_stats['threats_detected'] += 1
-            current_stats['threats_by_type'][threat_type] += 1
             
-            # Création de l'alerte
-            alert = {
-                'id': f"alert_{int(time.time() * 1000)}_{random.randint(1000, 9999)}",
-                'timestamp': datetime.now().isoformat(),
-                'type': threat_type,
-                'severity': severity,
-                'confidence': round(confidence, 2),
-                'source_ip': features['source_ip'],
-                'destination_ip': features['destination_ip'],
-                'source_port': features['source_port'],
-                'destination_port': features['destination_port'],
-                'protocol': features['protocol'],
-                'description': generate_alert_description(threat_type, features),
-                'status': 'active'
-            }
+            # ✅ CORRECTION: Utiliser .get() pour éviter KeyError
+            current_stats['threats_by_type'][threat_type] = \
+                current_stats['threats_by_type'].get(threat_type, 0) + 1
             
             # Sauvegarde dans la base de données
             try:
-                db.add_alert(alert)
+                if db.add_alert(alert):
+                    print(f"✅ Alerte sauvegardée: {threat_type}")
             except Exception as e:
-                print(f"Erreur sauvegarde alerte: {e}")
+                print(f"❌ Erreur sauvegarde alerte: {e}")
             
             # Ajout à l'historique (limité à 100)
             alert_history.append(alert)
             if len(alert_history) > 100:
                 alert_history.pop(0)
             
-            # Émission WebSocket vers tous les clients connectés
+            # ✅ Émission WebSocket vers tous les clients
             socketio.emit('new_alert', alert)
+            socketio.emit('stats_update', current_stats)
             
-            print(f"⚠️  ALERTE {severity}: {threat_type} - {features['source_ip']} → {features['destination_ip']}:{features['destination_port']}")
+            print(f"⚠️  ALERTE {alert['severity']}: {threat_type} - {alert['source_ip']} → {alert['destination_ip']}:{alert['destination_port']}")
         
         else:
             # Paquet normal
             current_stats['normal_traffic'] += 1
-        
-        # Émission des stats mises à jour
-        socketio.emit('stats_update', current_stats)
         
     except Exception as e:
         print(f"❌ Erreur dans packet_callback: {e}")
@@ -209,62 +172,114 @@ def packet_callback(packet):
         traceback.print_exc()
 
 
-def classify_threat(features: Dict) -> str:
+def classify_threat(packet_info: Dict) -> Optional[Dict]:
     """
-    Classifie le type de menace basé sur les caractéristiques du paquet
-    NOUVELLE FONCTION - Classification intelligente
+    Classifie une menace potentielle basée sur les paquets capturés
+    ✅ VERSION COMPLÈTE - Détecte 6 types d'attaques
     """
     
-    source_ip = features.get('source_ip', '')
-    dest_ip = features.get('destination_ip', '')
-    source_port = features.get('source_port', 0)
-    dest_port = features.get('destination_port', 0)
-    payload_size = features.get('payload_size', 0)
-    flags = features.get('flags', '')
-    raw_data = features.get('raw_data', '').lower()
+    threat_type = None
+    severity = "LOW"
+    confidence = 0.5
+    description = ""
     
-    # IPs malveillantes connues
-    malicious_ips = ['203.0.113.1', '198.51.100.42', '192.0.2.123', '10.0.0.666']
+    # ✅ CORRECTION: Utiliser les bons noms de clés
+    src_ip = packet_info.get('source_ip', '')
+    dst_ip = packet_info.get('destination_ip', '')
+    src_port = packet_info.get('source_port', 0)
+    dst_port = packet_info.get('destination_port', 0)
+    protocol = packet_info.get('protocol', '')
+    payload = packet_info.get('raw_data', '')  # ✅ CHANGÉ
+    packet_size = packet_info.get('payload_size', 0)  # ✅ CHANGÉ
+    flags = packet_info.get('flags', '')
     
-    # 1. DÉTECTION DDoS
-    if flags == 'SYN' and payload_size < 150 and dest_port in [80, 443]:
-        if source_ip in malicious_ips or 'flood' in raw_data or 'ddos' in raw_data:
-            return "DDoS"
+    # ========== 1. DÉTECTION PORT SCAN ==========
+    if protocol == 'TCP' and 'S' in flags and 'A' not in flags:
+        threat_type = "Port Scan"
+        severity = "MEDIUM"
+        confidence = 0.7
+        description = f"Tentative de scan du port {dst_port}"
     
-    # 2. DÉTECTION PORT SCAN
-    if flags == 'SYN' and payload_size == 0:
-        if dest_port < 1024 or 'scan' in raw_data or 'port' in raw_data:
-            return "Port Scan"
+    # ========== 2. DÉTECTION DDoS ==========
+    elif protocol in ['ICMP', 'UDP']:
+        threat_type = "DDoS"
+        severity = "HIGH"
+        confidence = 0.8
+        description = f"Trafic {protocol} suspect vers {dst_ip}:{dst_port}"
     
-    # 3. DÉTECTION MALWARE C&C
-    suspicious_ports = [4444, 6667, 31337, 8080, 12345]
-    if dest_port in suspicious_ports:
-        if 'c&c' in raw_data or 'beacon' in raw_data or 'encrypted' in raw_data:
-            return "Malware C&C"
+    # ========== 3. DÉTECTION MALWARE C2 ==========
+    malware_ports = [4444, 6667, 31337, 12345, 1337]
+    if dst_port in malware_ports or src_port in malware_ports:
+        threat_type = "Malware C&C"
+        severity = "CRITICAL"
+        confidence = 0.9
+        description = f"Communication C2 détectée sur port {dst_port}"
     
-    # 4. DÉTECTION SQL INJECTION
-    sql_patterns = ["'or'", 'or 1=1', 'union select', 'drop table', 'admin\'--', '--', 'union', 'select']
-    if dest_port in [80, 443, 3306, 5432]:
-        if any(pattern in raw_data for pattern in sql_patterns):
-            return "SQL Injection"
+    # ========== 4. DÉTECTION SQL INJECTION ==========
+    elif protocol == 'TCP' and (dst_port == 80 or dst_port == 443):
+        sql_patterns = [
+            'union select', 'or 1=1', 'drop table', 
+            'insert into', '--', 'xp_cmdshell',
+            'exec(', 'execute(', '; drop', ';drop'
+        ]
+        
+        payload_lower = str(payload).lower() if payload else ''
+        
+        for pattern in sql_patterns:
+            if pattern in payload_lower:
+                threat_type = "SQL Injection"
+                severity = "CRITICAL"
+                confidence = 0.85
+                description = f"Pattern SQL détecté: {pattern}"
+                break
     
-    # 5. DÉTECTION XSS
-    xss_patterns = ['<script>', 'alert(', 'onerror=', 'javascript:', '<iframe', 'onload=']
-    if dest_port in [80, 443]:
-        if any(pattern in raw_data for pattern in xss_patterns):
-            return "XSS"
+    # ========== 5. DÉTECTION XSS ==========
+    elif protocol == 'TCP' and (dst_port == 80 or dst_port == 443):
+        xss_patterns = [
+            '<script>', 'javascript:', 'onerror=', 'onload=',
+            'alert(', 'document.cookie', '<iframe', 'eval('
+        ]
+        
+        payload_lower = str(payload).lower() if payload else ''
+        
+        for pattern in xss_patterns:
+            if pattern in payload_lower:
+                threat_type = "XSS"
+                severity = "HIGH"
+                confidence = 0.8
+                description = f"Pattern XSS détecté: {pattern}"
+                break
     
-    # 6. DÉTECTION BRUTE FORCE
-    auth_ports = [21, 22, 23, 3389, 5900]
-    if dest_port in auth_ports:
-        if 'login' in raw_data or 'attempt' in raw_data or 'password' in raw_data:
-            return "Brute Force"
+    # ========== 6. DÉTECTION BRUTE FORCE ==========
+    brute_force_ports = [21, 22, 23, 80, 443, 3389, 8080]
+    if dst_port in brute_force_ports and protocol == 'TCP' and not threat_type:
+        threat_type = "Brute Force"
+        severity = "HIGH"
+        confidence = 0.75
+        description = f"Tentative de force brute sur {dst_ip}:{dst_port}"
     
-    # 7. IP malveillante connue
-    if source_ip in malicious_ips:
-        return "Suspicious Activity"
+    # ========== CRÉATION DE L'ALERTE ==========
+    if threat_type:
+        alert = {
+            'id': f"alert_{int(time.time() * 1000)}_{random.randint(1000, 9999)}",
+            'timestamp': datetime.now().isoformat(),
+            'type': threat_type,
+            'severity': severity,
+            'confidence': confidence,
+            'source_ip': src_ip,
+            'destination_ip': dst_ip,
+            'source_port': src_port,
+            'destination_port': dst_port,
+            'protocol': protocol,
+            'description': description,
+            'status': 'active'
+        }
+        
+        print(f"⚠️  ALERTE GÉNÉRÉE: {threat_type} ({severity}) - {description}")
+        
+        return alert
     
-    return "Unknown"
+    return None
 
 
 def generate_alert_description(threat_type: str, features: Dict) -> str:

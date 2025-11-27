@@ -268,6 +268,7 @@ class RealNetworkScanner:
     def check_firewall_status(self) -> Dict:
         """
         Vérifie l'état du pare-feu système
+        ✅ CORRIGÉ - Gestion encodage UTF-8 + Détection français + DEBUG
         """
         
         print(f"[RealScanner] Vérification du pare-feu...")
@@ -280,17 +281,29 @@ class RealNetworkScanner:
         
         try:
             if self.os_type == "Windows":
-                # Commande Windows Firewall
+                # Commande Windows Firewall avec encodage UTF-8
                 result = subprocess.run(
                     ['netsh', 'advfirewall', 'show', 'allprofiles', 'state'],
                     capture_output=True,
                     text=True,
-                    timeout=5
+                    timeout=5,
+                    encoding='utf-8',
+                    errors='ignore'
                 )
                 
-                output = result.stdout
+                output = result.stdout if result.stdout else ''
                 
-                if 'State' in output and 'ON' in output.upper():
+                # 🔍 DEBUG - AFFICHER LA SORTIE EXACTE
+                print(f"\n[DEBUG] ========== SORTIE NETSH ==========")
+                print(f"[DEBUG] Sortie brute: '{output}'")
+                print(f"[DEBUG] Longueur: {len(output)} caractères")
+                print(f"[DEBUG] 'State' in output: {'State' in output}")
+                print(f"[DEBUG] 'ON' in output.upper(): {'ON' in output.upper()}")
+                print(f"[DEBUG] 'activ' in output.lower(): {'activ' in output.lower()}")
+                print(f"[DEBUG] ========================================\n")
+                
+                # ✅ DÉTECTION FRANÇAIS ET ANGLAIS
+                if ('State' in output and 'ON' in output.upper()) or 'actif' in output.lower():
                     firewall_status['enabled'] = True
                     firewall_status['details'] = "Pare-feu Windows actif"
                     firewall_status['risk_level'] = "LOW"
@@ -307,10 +320,14 @@ class RealNetworkScanner:
                     ['sudo', 'ufw', 'status'],
                     capture_output=True,
                     text=True,
-                    timeout=5
+                    timeout=5,
+                    encoding='utf-8',
+                    errors='ignore'
                 )
                 
-                if 'Status: active' in result.stdout:
+                output = result.stdout if result.stdout else ''
+                
+                if 'Status: active' in output:
                     firewall_status['enabled'] = True
                     firewall_status['details'] = "UFW actif"
                     firewall_status['risk_level'] = "LOW"
@@ -320,7 +337,7 @@ class RealNetworkScanner:
                     firewall_status['details'] = "UFW inactif"
                     firewall_status['risk_level'] = "CRITICAL"
                     print("⚠️  PARE-FEU DÉSACTIVÉ - RISQUE CRITIQUE!")
-            
+        
         except Exception as e:
             firewall_status['details'] = f"Erreur vérification: {str(e)}"
             print(f"❌ Erreur vérification pare-feu: {e}")
@@ -330,6 +347,7 @@ class RealNetworkScanner:
     def check_suspicious_processes(self) -> List[Dict]:
         """
         Détecte les processus suspects en cours d'exécution
+        ✅ CORRIGÉ - Enlève 'connections' de process_iter
         """
         
         print(f"[RealScanner] Analyse des processus suspects...")
@@ -344,25 +362,23 @@ class RealNetworkScanner:
         ]
         
         try:
-            for proc in psutil.process_iter(['pid', 'name', 'username', 'connections']):
+            # ✅ CORRIGÉ: Enlever 'connections' de la liste
+            for proc in psutil.process_iter(['pid', 'name', 'username']):
                 try:
-                    proc_name = proc.info['name'].lower()
+                    name = proc.info['name'].lower() if proc.info['name'] else ''
                     
-                    # Vérification 1 : Nom suspect
-                    if any(suspect in proc_name for suspect in suspicious_names):
-                        
-                        proc_info = {
-                            'pid': proc.info['pid'],
-                            'name': proc.info['name'],
-                            'user': proc.info['username'],
-                            'reason': 'Nom de processus suspect',
-                            'risk_level': 'CRITICAL',
-                            'timestamp': datetime.now().isoformat()
-                        }
-                        
-                        suspicious_processes.append(proc_info)
-                        print(f"⚠️  PROCESSUS SUSPECT: {proc.info['name']} (PID: {proc.info['pid']})")
-                    
+                    # Vérifier noms suspects
+                    for suspicious in suspicious_names:
+                        if suspicious in name:
+                            suspicious_processes.append({
+                                'pid': proc.info['pid'],
+                                'name': proc.info['name'],
+                                'user': proc.info.get('username', 'N/A'),
+                                'reason': f"Nom suspect: {suspicious}",
+                                'risk_level': 'CRITICAL'
+                            })
+                            print(f"⚠️  PROCESSUS SUSPECT: {proc.info['name']} (PID: {proc.info['pid']})")
+                
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     pass
             
