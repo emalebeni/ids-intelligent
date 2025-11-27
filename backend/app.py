@@ -36,8 +36,6 @@ from real_scanner import real_scanner
 from explanations import threat_explainer
 from remediation import security_remediator
 
-# Le reste du fichier reste IDENTIQUE...
-
 # Création du dossier d'export
 os.makedirs(Config.EXPORT_DIR, exist_ok=True)
 print(f"[Export] Dossier d'export : {Config.EXPORT_DIR}")
@@ -194,7 +192,7 @@ def packet_callback(packet):
                 alert_history.pop(0)
             
             # Émission WebSocket vers tous les clients connectés
-            socketio.emit('new_alert', alert, broadcast=True)
+            socketio.emit('new_alert', alert)
             
             print(f"⚠️  ALERTE {severity}: {threat_type} - {features['source_ip']} → {features['destination_ip']}:{features['destination_port']}")
         
@@ -203,7 +201,7 @@ def packet_callback(packet):
             current_stats['normal_traffic'] += 1
         
         # Émission des stats mises à jour
-        socketio.emit('stats_update', current_stats, broadcast=True)
+        socketio.emit('stats_update', current_stats)
         
     except Exception as e:
         print(f"❌ Erreur dans packet_callback: {e}")
@@ -693,11 +691,11 @@ def start_full_scan():
             try:
                 print("[API] Démarrage du scan complet...")
                 results = real_scanner.perform_full_scan()
-                socketio.emit('scan_completed', results, broadcast=True)
+                socketio.emit('scan_completed', results)
                 print(f"[API] Scan terminé - Score de risque: {results['risk_score']}/100")
             except Exception as e:
                 print(f"[API] Erreur lors du scan: {e}")
-                socketio.emit('scan_error', {'error': str(e)}, broadcast=True)
+                socketio.emit('scan_error', {'error': str(e)})
         
         scan_thread = threading.Thread(target=run_scan, daemon=True)
         scan_thread.start()
@@ -921,7 +919,7 @@ def execute_remediation():
         result = security_remediator.execute_action(action_id, alert_details)
         
         # Émettre notification via WebSocket
-        socketio.emit('remediation_executed', result, broadcast=True)
+        socketio.emit('remediation_executed', result)
         
         return jsonify({
             'success': result['success'],
@@ -976,7 +974,7 @@ def perform_startup_scan():
         
         print("="*60 + "\n")
         
-        socketio.emit('startup_scan_completed', results, broadcast=True)
+        socketio.emit('startup_scan_completed', results)
     except Exception as e:
         print(f"❌ Erreur lors du scan de démarrage: {e}")
 
