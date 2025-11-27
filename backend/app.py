@@ -18,23 +18,25 @@ from typing import Dict, List
 # Ajouter le répertoire parent au path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Imports des modules du système
-from backend.config import Config
-from backend.database import DatabaseManager
-from backend.models import (
+# Imports des modules du système (✅ CORRIGÉ - sans "backend.")
+from config import Config
+from database import DatabaseManager
+from models import (
     NetworkPacket, Alert, Incident, TrafficMonitor,
     AIDetectionEngine, ThreatClassifier, SeverityLevel
 )
-from backend.ml_engine import AnomalyDetector, TrafficAnalyzer, ThreatIntelligence, PatternRecognizer
-from backend.packet_capture import PacketCapture, AttackSimulator
-from backend.utils import (
+from ml_engine import AnomalyDetector, TrafficAnalyzer, ThreatIntelligence, PatternRecognizer
+from packet_capture import PacketCapture, AttackSimulator
+from utils import (
     generate_id, format_timestamp, calculate_confidence_score,
     classify_severity, export_to_json, export_to_csv,
     create_alert_description, format_alert_for_display
 )
-from backend.real_scanner import real_scanner  # 🆕 SCANNER RÉEL
-from backend.explanations import threat_explainer  # 🆕 EXPLICATIONS SIMPLES
-from backend.remediation import security_remediator  # 🆕 REMÉDIATION
+from real_scanner import real_scanner
+from explanations import threat_explainer
+from remediation import security_remediator
+
+# Le reste du fichier reste IDENTIQUE...
 
 # Création du dossier d'export
 os.makedirs(Config.EXPORT_DIR, exist_ok=True)
